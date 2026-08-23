@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 use thiserror::Error;
 
-pub use v325::{EquipmentDocument, ItemSlot, PlayerDocument, StorageDocument};
+pub use v325::{CharacterDocument, EquipmentDocument, ItemSlot, PlayerDocument, StorageDocument};
 
 #[derive(Debug, Error)]
 pub enum SaveError {
@@ -45,6 +45,7 @@ pub struct DiscoveredPlayer {
 pub struct SavePlayerRequest {
     pub path: String,
     pub source_hash: String,
+    pub character: CharacterDocument,
     pub inventory: Vec<ItemSlot>,
     pub equipment: EquipmentDocument,
     pub storage: StorageDocument,
@@ -93,7 +94,7 @@ pub fn discover_players() -> Result<Vec<DiscoveredPlayer>, SaveError> {
                 .map_or(0, |duration| duration.as_secs());
             players.push(DiscoveredPlayer {
                 path: path.to_string_lossy().into_owned(),
-                name: document.name,
+                name: document.character.name,
                 version: document.version,
                 modified_at,
             });
@@ -117,7 +118,12 @@ fn load_path(path: &Path) -> Result<PlayerDocument, SaveError> {
 
 pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError> {
     let path = checked_path(&request.path)?;
-    v325::validate_document(&request.inventory, &request.equipment, &request.storage)?;
+    v325::validate_document(
+        &request.character,
+        &request.inventory,
+        &request.equipment,
+        &request.storage,
+    )?;
 
     let encrypted = fs::read(&path)?;
     if hash(&encrypted) != request.source_hash {
@@ -126,6 +132,7 @@ pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError>
     let plaintext = crypto::decrypt(&encrypted)?;
     let patched = v325::patch_document(
         &plaintext,
+        &request.character,
         &request.inventory,
         &request.equipment,
         &request.storage,
@@ -148,20 +155,25 @@ pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError>
     let stage_path = staged_path(&path);
     fs::write(&stage_path, &staged_encrypted)?;
     let staged_plaintext = crypto::decrypt(&fs::read(&stage_path)?)?;
-    if staged_plaintext != patched {
+    if !staged_plaintext.starts_with(&patched)
+        || staged_plaintext[patched.len()..]
+            .iter()
+            .any(|byte| *byte != 0)
+    {
         let _ = fs::remove_file(&stage_path);
         return Err(SaveError::Verification(
             "encrypted round trip did not reproduce the patched payload".into(),
         ));
     }
     let verified = v325::parse(&stage_path, &hash(&staged_encrypted), &staged_plaintext)?;
-    if verified.inventory != request.inventory
+    if verified.character != request.character
+        || verified.inventory != request.inventory
         || verified.equipment != request.equipment
         || verified.storage != request.storage
     {
         let _ = fs::remove_file(&stage_path);
         return Err(SaveError::Verification(
-            "re-opened item surfaces do not match the requested edit".into(),
+            "re-opened character or item data does not match the requested edit".into(),
         ));
     }
 
@@ -229,6 +241,7 @@ mod integration_tests {
         let receipt = save_player(SavePlayerRequest {
             path: copy.to_string_lossy().into_owned(),
             source_hash: before.source_hash.clone(),
+            character: before.character.clone(),
             inventory: before.inventory.clone(),
             equipment: before.equipment.clone(),
             storage: before.storage.clone(),
@@ -236,7 +249,7 @@ mod integration_tests {
         .unwrap();
         let after = load_path(&copy).unwrap();
 
-        assert_eq!(before.name, after.name);
+        assert_eq!(before.character, after.character);
         assert_eq!(before.version, after.version);
         assert_eq!(before.inventory, after.inventory);
         assert_eq!(before.equipment, after.equipment);
@@ -244,7 +257,7 @@ mod integration_tests {
         assert!(Path::new(&receipt.backup_path).exists());
         eprintln!(
             "verified {} v{} with inventory, equipment, and storage records; backup created",
-            after.name, after.version
+            after.character.name, after.version
         );
     }
 
@@ -295,6 +308,7 @@ mod integration_tests {
         save_player(SavePlayerRequest {
             path: copy.to_string_lossy().into_owned(),
             source_hash: before.source_hash.clone(),
+            character: before.character.clone(),
             inventory: before.inventory.clone(),
             equipment: before.equipment.clone(),
             storage: before.storage.clone(),
@@ -304,5 +318,40 @@ mod integration_tests {
         assert_eq!(after.inventory[inventory_slot].item_id, 3043);
         assert_eq!(after.storage.safe[safe_slot].item_id, 2768);
         assert_eq!(after.equipment.loadouts[inactive].armor[0].item_id, 90);
+    }
+
+    #[test]
+    fn external_fixture_mutates_character_region_when_configured() {
+        let Ok(source) = std::env::var("PLRFORGE_FIXTURE") else {
+            return;
+        };
+        let temporary = tempfile::tempdir().unwrap();
+        let copy = temporary.path().join("character-fixture.plr");
+        fs::copy(source, &copy).unwrap();
+
+        let mut before = load_path(&copy).unwrap();
+        before.character.name = "ForgeTest".into();
+        before.character.stats.life = 499;
+        before.character.appearance.hair = 42;
+        before.character.appearance.hair_color.r ^= 0xff;
+        before.character.appearance.voice_variant = 4;
+        before.character.appearance.voice_pitch = -0.5;
+        before.character.upgrades.used_ambrosia = !before.character.upgrades.used_ambrosia;
+        before.character.counters.pve_deaths += 1;
+
+        save_player(SavePlayerRequest {
+            path: copy.to_string_lossy().into_owned(),
+            source_hash: before.source_hash.clone(),
+            character: before.character.clone(),
+            inventory: before.inventory.clone(),
+            equipment: before.equipment.clone(),
+            storage: before.storage.clone(),
+        })
+        .unwrap();
+        let after = load_path(&copy).unwrap();
+        assert_eq!(after.character, before.character);
+        assert_eq!(after.inventory, before.inventory);
+        assert_eq!(after.equipment, before.equipment);
+        assert_eq!(after.storage, before.storage);
     }
 }

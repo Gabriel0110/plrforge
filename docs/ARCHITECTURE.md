@@ -12,11 +12,11 @@ Tauri command boundary
 version registry → v325 codec → AES-CBC envelope → guarded filesystem transaction
 ```
 
-The webview never receives encryption keys or raw decrypted payloads. It receives a normalized `PlayerDocument`, sends complete validated inventory, equipment, and storage snapshots on save, and includes the source hash to prevent overwriting an externally changed file.
+The webview never receives encryption keys or raw decrypted payloads. It receives a normalized `PlayerDocument`, sends complete validated character, inventory, equipment, and storage snapshots on save, and includes the source hash to prevent overwriting an externally changed file.
 
 ## Save engine
 
-The current v325 codec is intentionally bytes-preserving. It locates the fixed inventory/equipment/storage blocks and traverses the versioned variable-length tail to the three serialized loadouts. Serialization patches only supported item and visibility records, so unrelated character and future tail fields are preserved exactly. Unknown Journey power payloads fail closed before a write is attempted.
+The current v325 codec is intentionally bytes-preserving. It maps the complete serialized character header, locates the fixed inventory/equipment/storage blocks, and traverses the versioned variable-length tail to the three serialized loadouts and voice fields. Serialization patches only supported character, item, and visibility records, so unsupported tail fields are preserved exactly. Variable-length .NET names are safely re-encoded before all dependent offsets are relocated. Unknown Journey power payloads fail closed before a write is attempted.
 
 The version registry rejects anything other than 325 today. Each future codec must implement the same conceptual operations:
 
@@ -32,10 +32,10 @@ Search metadata and save compatibility are separate concerns. Unknown but valid 
 
 ## Testing strategy
 
-- Rust unit tests cover 7-bit strings, dynamic v325 offsets, active/inactive loadout mapping, equipment stack validation, encryption round trips, and mutation-range assertions.
+- Rust unit tests cover 7-bit strings, variable-length Unicode names, dynamic v325 offsets, character validation, all character-field round trips, active/inactive loadout mapping, equipment stack validation, encryption and zero-padding round trips, and mutation-range assertions.
 - Golden fixtures should be synthetic or explicitly user-approved and must never contain personal player files in source control.
-- React tests cover item search, slot replacement, validation, undo/redo, loading, empty, and error states.
-- Native smoke tests load a copied fixture, save it, re-open it, and compare inventory, equipment, storage, and visibility models.
+- React tests cover the Character workspace, item search, slot replacement, validation, shared undo/redo, loading, empty, and error states.
+- Native smoke tests load a copied fixture, change character and item regions, save it, re-open it, and compare the complete normalized models.
 
 ## Update response
 

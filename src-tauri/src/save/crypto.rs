@@ -19,10 +19,12 @@ pub fn decrypt(encrypted: &[u8]) -> Result<Vec<u8>, SaveError> {
 }
 
 pub fn encrypt(plaintext: &[u8]) -> Result<Vec<u8>, SaveError> {
-    if plaintext.is_empty() || plaintext.len() % 16 != 0 {
+    if plaintext.is_empty() {
         return Err(SaveError::Crypto);
     }
     let mut output = plaintext.to_vec();
+    let padded_length = plaintext.len().div_ceil(16) * 16;
+    output.resize(padded_length, 0);
     let length = output.len();
     let encrypted = Encryptor::<Aes128>::new(&KEY.into(), &KEY.into())
         .encrypt_padded_mut::<NoPadding>(&mut output, length)
@@ -38,5 +40,13 @@ mod tests {
     fn round_trips_full_blocks() {
         let plaintext = vec![0x2a; 32];
         assert_eq!(decrypt(&encrypt(&plaintext).unwrap()).unwrap(), plaintext);
+    }
+
+    #[test]
+    fn zero_pads_partial_blocks() {
+        let plaintext = vec![0x2a; 19];
+        let decrypted = decrypt(&encrypt(&plaintext).unwrap()).unwrap();
+        assert_eq!(&decrypted[..plaintext.len()], plaintext);
+        assert!(decrypted[plaintext.len()..].iter().all(|byte| *byte == 0));
     }
 }

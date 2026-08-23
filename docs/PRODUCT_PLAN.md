@@ -12,7 +12,7 @@ The application optimizes for three jobs:
 
 ## Information architecture
 
-- **Overview:** identity, difficulty, health, mana, appearance, permanent upgrades, death counts, and play time.
+- **Character:** identity, difficulty, health, mana, appearance, permanent upgrades, death counts, and play time.
 - **Loadouts:** armor, accessories, vanity, dyes, pets, light pets, hooks, mounts, and minecarts across all three loadouts.
 - **Inventory:** 50 main slots, coins, ammo, item ID, stack, prefix, favorite, move, replace, and clear.
 - **Storage:** Piggy Bank, Safe, Defender's Forge, and Void Vault.
@@ -60,9 +60,10 @@ Global command search finds both actions and items. An item can be added to the 
 
 The codec and editing work is complete. Local item-icon extraction remains an optional visual enhancement; the built-in no-assets glyph fallback is production-safe.
 
-### Phase 3 — character systems
+### Phase 3 — character systems (in progress)
 
-- Identity, appearance colors, difficulty, health/mana, permanent consumable upgrades, buffs, deaths, and spawn points.
+- Identity, appearance colors, voice settings, difficulty, health/mana, permanent consumable upgrades, play time, tax savings, and death counters are implemented.
+- Buff editing and spawn-point editing remain to be implemented.
 - Journey research tracker and bulk research actions.
 - Validation rules mirrored from the matching game version.
 

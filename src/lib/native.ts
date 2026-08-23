@@ -32,6 +32,7 @@ export function savePlayer(document: PlayerDocument): Promise<SaveReceipt> {
     request: {
       path: document.path,
       sourceHash: document.sourceHash,
+      character: document.character,
       inventory: document.inventory,
       equipment: document.equipment,
       storage: document.storage,

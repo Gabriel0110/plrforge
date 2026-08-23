@@ -2,7 +2,7 @@
 
 PlrForge is an open-source, local-first Terraria character editor for macOS and Windows. It is an independent project and is not affiliated with or endorsed by Re-Logic.
 
-The current build loads encrypted desktop `.plr` files at version 325 and edits all item-bearing character surfaces: the 58 inventory slots, three equipment loadouts, vanity and dyes, pets/mounts/hooks, and four personal storage containers. Every surface shares one undo history and guarded backup-and-verify save transaction. Character stats, buffs, research, and spawn-point writes remain fail-closed roadmap work.
+The current build loads encrypted desktop `.plr` files at version 325 and edits character identity, difficulty, play time, health/mana, appearance and voice, permanent upgrades, tax savings, death counters, and every item-bearing surface. That includes the 58 inventory slots, three equipment loadouts, vanity and dyes, pets/mounts/hooks, and four personal storage containers. Every surface shares one undo history and guarded backup-and-verify save transaction. Buffs, Journey research, and spawn-point writes remain fail-closed roadmap work.
 
 ## Why Tauri
 
@@ -29,7 +29,7 @@ The browser build opens a safe demo character. Native file access is available o
 PlrForge never mutates a loaded file in memory without tracking the change. Before saving it:
 
 1. Checks that the file still matches the hash that was originally loaded.
-2. Validates every editable item surface, slot count, stack rule, and supported file version.
+2. Validates every editable character field, item surface, slot count, stack rule, and supported file version.
 3. Creates a timestamped copy in a sibling `.plrforge-backups` directory.
 4. Writes and decrypts a staged file to verify byte-for-byte plaintext integrity.
 5. Replaces the original and reports the recoverable backup path.

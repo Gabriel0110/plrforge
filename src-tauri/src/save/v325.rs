@@ -25,26 +25,81 @@ pub struct PlayerDocument {
     pub path: String,
     pub source_hash: String,
     pub version: i32,
-    pub name: String,
-    pub difficulty: u8,
-    pub play_time_ticks: String,
-    pub core_stats: CoreStats,
+    pub character: CharacterDocument,
     pub inventory: Vec<ItemSlot>,
     pub equipment: EquipmentDocument,
     pub storage: StorageDocument,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct CoreStats {
+pub struct CharacterDocument {
+    pub name: String,
+    pub difficulty: u8,
+    pub play_time_ticks: String,
+    pub stats: CharacterStats,
+    pub appearance: CharacterAppearance,
+    pub upgrades: PermanentUpgrades,
+    pub counters: CharacterCounters,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CharacterStats {
     pub life: i32,
     pub life_max: i32,
     pub mana: i32,
     pub mana_max: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CharacterAppearance {
     pub hair: i32,
     pub hair_dye: u8,
     pub team: u8,
     pub skin_variant: u8,
+    pub hair_color: RgbColor,
+    pub skin_color: RgbColor,
+    pub eye_color: RgbColor,
+    pub shirt_color: RgbColor,
+    pub under_shirt_color: RgbColor,
+    pub pants_color: RgbColor,
+    pub shoe_color: RgbColor,
+    pub voice_variant: u8,
+    pub voice_pitch: f32,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RgbColor {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PermanentUpgrades {
+    pub extra_accessory: bool,
+    pub unlocked_biome_torches: bool,
+    pub using_biome_torches: bool,
+    pub ate_artisan_bread: bool,
+    pub used_aegis_crystal: bool,
+    pub used_aegis_fruit: bool,
+    pub used_arcane_crystal: bool,
+    pub used_galaxy_pearl: bool,
+    pub used_gummy_worm: bool,
+    pub used_ambrosia: bool,
+    pub downed_dd2_event: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CharacterCounters {
+    pub tax_money: i32,
+    pub pve_deaths: i32,
+    pub pvp_deaths: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -94,6 +149,8 @@ struct Layout {
     banks: [usize; 4],
     current_loadout_index: usize,
     loadouts: usize,
+    voice_variant: usize,
+    voice_pitch: usize,
 }
 
 pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocument, SaveError> {
@@ -109,13 +166,10 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
     let play_time_ticks = read_i64(data, cursor)?;
     cursor += 8;
     let hair = read_i32(data, cursor)?;
-    cursor += 4;
-    let hair_dye = read_u8(data, cursor)?;
-    cursor += 1;
-    let team = read_u8(data, cursor)?;
-    cursor += 3;
-    let skin_variant = read_u8(data, cursor)?;
-    cursor += 1;
+    let hair_dye = read_u8(data, cursor + 4)?;
+    let team = read_u8(data, cursor + 5)?;
+    let skin_variant = read_u8(data, cursor + 9)?;
+    cursor += 10;
     let life = read_i32(data, cursor)?;
     cursor += 4;
     let life_max = read_i32(data, cursor)?;
@@ -123,6 +177,24 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
     let mana = read_i32(data, cursor)?;
     cursor += 4;
     let mana_max = read_i32(data, cursor)?;
+
+    let header = name_end;
+    let colors = header + 59;
+    let appearance = CharacterAppearance {
+        hair,
+        hair_dye,
+        team,
+        skin_variant,
+        hair_color: read_color(data, colors)?,
+        skin_color: read_color(data, colors + 3)?,
+        eye_color: read_color(data, colors + 6)?,
+        shirt_color: read_color(data, colors + 9)?,
+        under_shirt_color: read_color(data, colors + 12)?,
+        pants_color: read_color(data, colors + 15)?,
+        shoe_color: read_color(data, colors + 18)?,
+        voice_variant: read_u8(data, layout.voice_variant)?,
+        voice_pitch: read_f32(data, layout.voice_pitch)?,
+    };
 
     let inventory = read_slots(
         data,
@@ -164,18 +236,35 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
         path: path.to_string_lossy().into_owned(),
         source_hash: source_hash.into(),
         version,
-        name,
-        difficulty,
-        play_time_ticks: play_time_ticks.to_string(),
-        core_stats: CoreStats {
-            life,
-            life_max,
-            mana,
-            mana_max,
-            hair,
-            hair_dye,
-            team,
-            skin_variant,
+        character: CharacterDocument {
+            name,
+            difficulty,
+            play_time_ticks: play_time_ticks.to_string(),
+            stats: CharacterStats {
+                life,
+                life_max,
+                mana,
+                mana_max,
+            },
+            appearance,
+            upgrades: PermanentUpgrades {
+                extra_accessory: read_bool(data, header + 35)?,
+                unlocked_biome_torches: read_bool(data, header + 36)?,
+                using_biome_torches: read_bool(data, header + 37)?,
+                ate_artisan_bread: read_bool(data, header + 38)?,
+                used_aegis_crystal: read_bool(data, header + 40)?,
+                used_aegis_fruit: read_bool(data, header + 41)?,
+                used_arcane_crystal: read_bool(data, header + 42)?,
+                used_galaxy_pearl: read_bool(data, header + 43)?,
+                used_gummy_worm: read_bool(data, header + 44)?,
+                used_ambrosia: read_bool(data, header + 45)?,
+                downed_dd2_event: read_bool(data, header + 46)?,
+            },
+            counters: CharacterCounters {
+                tax_money: read_i32(data, header + 47)?,
+                pve_deaths: read_i32(data, header + 51)?,
+                pvp_deaths: read_i32(data, header + 55)?,
+            },
         },
         inventory,
         equipment: EquipmentDocument {
@@ -207,10 +296,12 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
 }
 
 pub fn validate_document(
+    character: &CharacterDocument,
     inventory: &[ItemSlot],
     equipment: &EquipmentDocument,
     storage: &StorageDocument,
 ) -> Result<(), SaveError> {
+    validate_character(character)?;
     validate_slots(
         inventory,
         INVENTORY_RECORDS,
@@ -289,13 +380,14 @@ pub fn validate_document(
 
 pub fn patch_document(
     data: &[u8],
+    character: &CharacterDocument,
     inventory: &[ItemSlot],
     equipment: &EquipmentDocument,
     storage: &StorageDocument,
 ) -> Result<Vec<u8>, SaveError> {
-    validate_document(inventory, equipment, storage)?;
-    let layout = locate_layout(data)?;
-    let original_index = read_i32(data, layout.current_loadout_index)?;
+    validate_document(character, inventory, equipment, storage)?;
+    let original_layout = locate_layout(data)?;
+    let original_index = read_i32(data, original_layout.current_loadout_index)?;
     if original_index != equipment.current_loadout_index as i32 {
         return Err(SaveError::Validation(
             "changing the active loadout is not enabled yet; switch it in Terraria and reload the file".into(),
@@ -303,6 +395,10 @@ pub fn patch_document(
     }
 
     let mut patched = data.to_vec();
+    let encoded_name = encode_dotnet_string(&character.name);
+    patched.splice(METADATA_END..original_layout.name_end, encoded_name);
+    let layout = locate_layout(&patched)?;
+    write_character(&mut patched, layout, character)?;
     write_slots(
         &mut patched,
         layout.inventory,
@@ -369,6 +465,140 @@ pub fn patch_document(
         true,
     );
     Ok(patched)
+}
+
+fn validate_character(character: &CharacterDocument) -> Result<(), SaveError> {
+    let name_units = character.name.encode_utf16().count();
+    if character.name.trim().is_empty() || name_units > 20 {
+        return Err(SaveError::Validation(
+            "character name must contain 1 to 20 UTF-16 characters".into(),
+        ));
+    }
+    if character.difficulty > 3 {
+        return Err(SaveError::Validation(
+            "difficulty must be Classic, Mediumcore, Hardcore, or Journey".into(),
+        ));
+    }
+    let play_time = character.play_time_ticks.parse::<i64>().map_err(|_| {
+        SaveError::Validation("play time must be a signed 64-bit tick count".into())
+    })?;
+    if play_time < 0 {
+        return Err(SaveError::Validation("play time cannot be negative".into()));
+    }
+    let stats = &character.stats;
+    if !(0..=500).contains(&stats.life_max) {
+        return Err(SaveError::Validation(
+            "maximum health must be between 0 and 500".into(),
+        ));
+    }
+    if !(-1000..=1000).contains(&stats.life) {
+        return Err(SaveError::Validation(
+            "current health is outside Terraria's supported save range".into(),
+        ));
+    }
+    if !(0..=200).contains(&stats.mana_max) {
+        return Err(SaveError::Validation(
+            "maximum mana must be between 0 and 200".into(),
+        ));
+    }
+    if !(-1000..=400).contains(&stats.mana) {
+        return Err(SaveError::Validation(
+            "current mana is outside Terraria's supported save range".into(),
+        ));
+    }
+
+    let appearance = &character.appearance;
+    if !(0..=227).contains(&appearance.hair) {
+        return Err(SaveError::Validation(
+            "hair style must be between 0 and 227 for Terraria v325".into(),
+        ));
+    }
+    if appearance.team > 5 {
+        return Err(SaveError::Validation(
+            "team must be None, Red, Green, Blue, Yellow, or Pink".into(),
+        ));
+    }
+    if appearance.skin_variant > 11 {
+        return Err(SaveError::Validation(
+            "character style must be between 0 and 11".into(),
+        ));
+    }
+    if !(1..=4).contains(&appearance.voice_variant) {
+        return Err(SaveError::Validation(
+            "voice variant must be between 1 and 4".into(),
+        ));
+    }
+    if !appearance.voice_pitch.is_finite() || !(-1.0..=1.0).contains(&appearance.voice_pitch) {
+        return Err(SaveError::Validation(
+            "voice pitch must be a finite value from -1.0 to 1.0".into(),
+        ));
+    }
+    if character.counters.tax_money < 0
+        || character.counters.pve_deaths < 0
+        || character.counters.pvp_deaths < 0
+    {
+        return Err(SaveError::Validation(
+            "tax savings and death counters cannot be negative".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn write_character(
+    data: &mut [u8],
+    layout: Layout,
+    character: &CharacterDocument,
+) -> Result<(), SaveError> {
+    let base = layout.name_end;
+    data[base] = character.difficulty;
+    let ticks = character.play_time_ticks.parse::<i64>().map_err(|_| {
+        SaveError::Validation("play time must be a signed 64-bit tick count".into())
+    })?;
+    data[base + 1..base + 9].copy_from_slice(&ticks.to_le_bytes());
+    data[base + 9..base + 13].copy_from_slice(&character.appearance.hair.to_le_bytes());
+    data[base + 13] = character.appearance.hair_dye;
+    data[base + 14] = character.appearance.team;
+    data[base + 18] = character.appearance.skin_variant;
+    data[base + 19..base + 23].copy_from_slice(&character.stats.life.to_le_bytes());
+    data[base + 23..base + 27].copy_from_slice(&character.stats.life_max.to_le_bytes());
+    data[base + 27..base + 31].copy_from_slice(&character.stats.mana.to_le_bytes());
+    data[base + 31..base + 35].copy_from_slice(&character.stats.mana_max.to_le_bytes());
+
+    let upgrades = &character.upgrades;
+    data[base + 35] = u8::from(upgrades.extra_accessory);
+    data[base + 36] = u8::from(upgrades.unlocked_biome_torches);
+    data[base + 37] = u8::from(upgrades.using_biome_torches);
+    data[base + 38] = u8::from(upgrades.ate_artisan_bread);
+    data[base + 39] = 0;
+    data[base + 40] = u8::from(upgrades.used_aegis_crystal);
+    data[base + 41] = u8::from(upgrades.used_aegis_fruit);
+    data[base + 42] = u8::from(upgrades.used_arcane_crystal);
+    data[base + 43] = u8::from(upgrades.used_galaxy_pearl);
+    data[base + 44] = u8::from(upgrades.used_gummy_worm);
+    data[base + 45] = u8::from(upgrades.used_ambrosia);
+    data[base + 46] = u8::from(upgrades.downed_dd2_event);
+    data[base + 47..base + 51].copy_from_slice(&character.counters.tax_money.to_le_bytes());
+    data[base + 51..base + 55].copy_from_slice(&character.counters.pve_deaths.to_le_bytes());
+    data[base + 55..base + 59].copy_from_slice(&character.counters.pvp_deaths.to_le_bytes());
+
+    for (offset, color) in [
+        character.appearance.hair_color,
+        character.appearance.skin_color,
+        character.appearance.eye_color,
+        character.appearance.shirt_color,
+        character.appearance.under_shirt_color,
+        character.appearance.pants_color,
+        character.appearance.shoe_color,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        write_color(data, base + 59 + offset * 3, color);
+    }
+    data[layout.voice_variant] = character.appearance.voice_variant;
+    data[layout.voice_pitch..layout.voice_pitch + 4]
+        .copy_from_slice(&character.appearance.voice_pitch.to_le_bytes());
+    Ok(())
 }
 
 #[derive(Clone, Copy)]
@@ -509,7 +739,9 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
     let current_loadout_index = cursor;
     cursor = checked_advance(data, cursor, 4)?;
     let loadouts = cursor;
-    checked_advance(data, loadouts, LOADOUT_RECORDS * LOADOUT_SIZE)?;
+    let voice_variant = checked_advance(data, loadouts, LOADOUT_RECORDS * LOADOUT_SIZE)?;
+    let voice_pitch = checked_advance(data, voice_variant, 1)?;
+    checked_advance(data, voice_pitch, 4)?;
 
     Ok(Layout {
         name_end,
@@ -520,6 +752,8 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
         banks: [bank1, bank2, bank3, bank4],
         current_loadout_index,
         loadouts,
+        voice_variant,
+        voice_pitch,
     })
 }
 
@@ -688,6 +922,37 @@ fn read_dotnet_string(data: &[u8], offset: usize) -> Result<(String, usize), Sav
     Ok((value.into(), end))
 }
 
+fn encode_dotnet_string(value: &str) -> Vec<u8> {
+    let bytes = value.as_bytes();
+    let mut length = bytes.len();
+    let mut encoded = Vec::with_capacity(bytes.len() + 5);
+    while length >= 0x80 {
+        encoded.push((length as u8) | 0x80);
+        length >>= 7;
+    }
+    encoded.push(length as u8);
+    encoded.extend_from_slice(bytes);
+    encoded
+}
+
+fn read_bool(data: &[u8], offset: usize) -> Result<bool, SaveError> {
+    Ok(read_u8(data, offset)? != 0)
+}
+
+fn read_color(data: &[u8], offset: usize) -> Result<RgbColor, SaveError> {
+    Ok(RgbColor {
+        r: read_u8(data, offset)?,
+        g: read_u8(data, offset + 1)?,
+        b: read_u8(data, offset + 2)?,
+    })
+}
+
+fn write_color(data: &mut [u8], offset: usize, color: RgbColor) {
+    data[offset] = color.r;
+    data[offset + 1] = color.g;
+    data[offset + 2] = color.b;
+}
+
 fn read_7bit_int(data: &[u8], mut offset: usize) -> Result<(usize, usize), SaveError> {
     let mut value = 0usize;
     let mut shift = 0usize;
@@ -736,6 +1001,15 @@ fn read_i64(data: &[u8], offset: usize) -> Result<i64, SaveError> {
     Ok(i64::from_le_bytes(bytes))
 }
 
+fn read_f32(data: &[u8], offset: usize) -> Result<f32, SaveError> {
+    let bytes: [u8; 4] = data
+        .get(offset..offset + 4)
+        .ok_or(SaveError::Truncated)?
+        .try_into()
+        .map_err(|_| SaveError::Truncated)?;
+    Ok(f32::from_le_bytes(bytes))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -763,6 +1037,8 @@ mod tests {
         let spawn_sentinel =
             bank4 + BANK_RECORDS * INVENTORY_RECORD_SIZE + 1 + BUFF_RECORDS * BUFF_RECORD_SIZE;
         data[spawn_sentinel..spawn_sentinel + 4].copy_from_slice(&(-1i32).to_le_bytes());
+        let layout = locate_layout(&data).unwrap();
+        data[layout.voice_variant] = 1;
         data
     }
 
@@ -817,7 +1093,8 @@ mod tests {
             favorited: false,
         };
 
-        let patched = patch_document(&data, &inventory, &equipment, &storage).unwrap();
+        let patched =
+            patch_document(&data, &before.character, &inventory, &equipment, &storage).unwrap();
         let after = parse(Path::new("fixture.plr"), "hash", &patched).unwrap();
         assert_eq!(after.inventory[18].item_id, 3043);
         assert_eq!(after.equipment.loadouts[0].armor[3].item_id, 111);
@@ -853,8 +1130,13 @@ mod tests {
             prefix: 0,
             favorited: false,
         };
-        let error =
-            validate_document(&document.inventory, &equipment, &document.storage).unwrap_err();
+        let error = validate_document(
+            &document.character,
+            &document.inventory,
+            &equipment,
+            &document.storage,
+        )
+        .unwrap_err();
         assert!(error.to_string().contains("invalid stack"));
     }
 
@@ -882,11 +1164,164 @@ mod tests {
             favorited: true,
         };
 
-        let patched = patch_document(&data, &before.inventory, &equipment, &storage).unwrap();
+        let patched = patch_document(
+            &data,
+            &before.character,
+            &before.inventory,
+            &equipment,
+            &storage,
+        )
+        .unwrap();
         let after = parse(Path::new("fixture.plr"), "hash", &patched).unwrap();
         assert_eq!(after.equipment.loadouts[1].armor[0].item_id, 90);
         assert!(after.equipment.misc_hidden[3]);
         assert!(after.storage.void_vault[2].favorited);
         assert_eq!(read_i32(&patched, layout.loadouts).unwrap(), 200);
+    }
+
+    #[test]
+    fn patches_complete_character_and_resizes_unicode_name_safely() {
+        let data = synthetic_player("A");
+        let before = parse(Path::new("fixture.plr"), "hash", &data).unwrap();
+        let mut character = before.character.clone();
+        character.name = "Forge测试".into();
+        character.difficulty = 3;
+        character.play_time_ticks = "9876543210".into();
+        character.stats = CharacterStats {
+            life: 475,
+            life_max: 500,
+            mana: 190,
+            mana_max: 200,
+        };
+        character.appearance.hair = 227;
+        character.appearance.hair_dye = 255;
+        character.appearance.team = 5;
+        character.appearance.skin_variant = 11;
+        character.appearance.hair_color = RgbColor { r: 1, g: 2, b: 3 };
+        character.appearance.skin_color = RgbColor { r: 4, g: 5, b: 6 };
+        character.appearance.eye_color = RgbColor { r: 7, g: 8, b: 9 };
+        character.appearance.shirt_color = RgbColor {
+            r: 10,
+            g: 11,
+            b: 12,
+        };
+        character.appearance.under_shirt_color = RgbColor {
+            r: 13,
+            g: 14,
+            b: 15,
+        };
+        character.appearance.pants_color = RgbColor {
+            r: 16,
+            g: 17,
+            b: 18,
+        };
+        character.appearance.shoe_color = RgbColor {
+            r: 19,
+            g: 20,
+            b: 21,
+        };
+        character.appearance.voice_variant = 4;
+        character.appearance.voice_pitch = 0.75;
+        character.upgrades = PermanentUpgrades {
+            extra_accessory: true,
+            unlocked_biome_torches: true,
+            using_biome_torches: true,
+            ate_artisan_bread: true,
+            used_aegis_crystal: true,
+            used_aegis_fruit: true,
+            used_arcane_crystal: true,
+            used_galaxy_pearl: true,
+            used_gummy_worm: true,
+            used_ambrosia: true,
+            downed_dd2_event: true,
+        };
+        character.counters = CharacterCounters {
+            tax_money: 250_000,
+            pve_deaths: 123,
+            pvp_deaths: 45,
+        };
+
+        let patched = patch_document(
+            &data,
+            &character,
+            &before.inventory,
+            &before.equipment,
+            &before.storage,
+        )
+        .unwrap();
+        let after = parse(Path::new("fixture.plr"), "hash", &patched).unwrap();
+        assert_eq!(after.character, character);
+        assert_eq!(after.inventory, before.inventory);
+        assert_eq!(after.equipment, before.equipment);
+        assert_eq!(after.storage, before.storage);
+        assert_eq!(patched.len(), data.len() + "Forge测试".len() - 1);
+    }
+
+    #[test]
+    fn rejects_character_values_terraria_would_clamp() {
+        let data = synthetic_player("NewBruv");
+        let document = parse(Path::new("fixture.plr"), "hash", &data).unwrap();
+        let mut character = document.character.clone();
+        character.appearance.hair = 228;
+        assert!(validate_character(&character)
+            .unwrap_err()
+            .to_string()
+            .contains("hair style"));
+
+        character = document.character;
+        character.stats.life_max = 501;
+        assert!(validate_character(&character)
+            .unwrap_err()
+            .to_string()
+            .contains("maximum health"));
+    }
+
+    #[test]
+    fn equal_length_character_edit_only_mutates_mapped_regions() {
+        let data = synthetic_player("NewBruv");
+        let before = parse(Path::new("fixture.plr"), "hash", &data).unwrap();
+        let original_layout = locate_layout(&data).unwrap();
+        let mut character = before.character.clone();
+        character.name = "ForgeMe".into();
+        character.difficulty = 3;
+        character.play_time_ticks = "123456789".into();
+        character.stats.life = 499;
+        character.appearance.hair = 42;
+        character.appearance.team = 5;
+        character.appearance.skin_variant = 9;
+        character.appearance.hair_color = RgbColor {
+            r: 100,
+            g: 101,
+            b: 102,
+        };
+        character.appearance.voice_variant = 4;
+        character.appearance.voice_pitch = -0.5;
+        character.upgrades.used_gummy_worm = true;
+        character.counters.pvp_deaths = 17;
+
+        let patched = patch_document(
+            &data,
+            &character,
+            &before.inventory,
+            &before.equipment,
+            &before.storage,
+        )
+        .unwrap();
+        assert_eq!(patched.len(), data.len());
+
+        for index in 0..data.len() {
+            let name = (METADATA_END..original_layout.name_end).contains(&index);
+            let header = (original_layout.name_end..original_layout.name_end + 15).contains(&index)
+                || (original_layout.name_end + 18..original_layout.name_end + HEADER_AFTER_NAME)
+                    .contains(&index);
+            let voice =
+                (original_layout.voice_variant..original_layout.voice_pitch + 4).contains(&index);
+            if data[index] != patched[index] {
+                assert!(
+                    name || header || voice,
+                    "unexpected character mutation at byte {index}"
+                );
+            }
+        }
     }
 }

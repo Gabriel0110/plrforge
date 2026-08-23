@@ -30,4 +30,18 @@ describe("editor history", () => {
     expect(changed.storage.safe[3].itemId).toBe(3043);
     expect(editorReducer(changed, { type: "undo" }).storage.safe[3].itemId).toBe(0);
   });
+
+  it("includes character edits in the shared undo history", () => {
+    const document = editableDocument(demoPlayer);
+    const changed = editorReducer(initialEditorState(document), {
+      type: "change",
+      document: {
+        ...document,
+        character: { ...document.character, name: "Forged Hero" },
+      },
+      entry: { id: "character", location: "Character · Identity", description: "Character name changed" },
+    });
+    expect(changed.character.name).toBe("Forged Hero");
+    expect(editorReducer(changed, { type: "undo" }).character.name).toBe("NewBruv");
+  });
 });

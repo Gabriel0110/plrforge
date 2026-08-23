@@ -8,7 +8,7 @@ import type {
   StorageDocument,
 } from "../types";
 
-export type EditableDocument = Pick<PlayerDocument, "inventory" | "equipment" | "storage">;
+export type EditableDocument = Pick<PlayerDocument, "character" | "inventory" | "equipment" | "storage">;
 
 export type EditorState = EditorSnapshot & {
   past: EditorSnapshot[];
@@ -24,6 +24,7 @@ export type EditorAction =
 
 function snapshot(state: EditorSnapshot): EditorSnapshot {
   return {
+    character: state.character,
     inventory: state.inventory,
     equipment: state.equipment,
     storage: state.storage,
@@ -33,6 +34,7 @@ function snapshot(state: EditorSnapshot): EditorSnapshot {
 
 export function editableDocument(player: EditableDocument): EditableDocument {
   return {
+    character: player.character,
     inventory: player.inventory,
     equipment: player.equipment,
     storage: player.storage,

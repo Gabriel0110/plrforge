@@ -27,25 +27,66 @@ export type StorageDocument = {
   voidVault: InventoryItem[];
 };
 
-export type CoreStats = {
+export type CharacterStats = {
   life: number;
   lifeMax: number;
   mana: number;
   manaMax: number;
+};
+
+export type RgbColor = { r: number; g: number; b: number };
+
+export type CharacterAppearance = {
   hair: number;
   hairDye: number;
   team: number;
   skinVariant: number;
+  hairColor: RgbColor;
+  skinColor: RgbColor;
+  eyeColor: RgbColor;
+  shirtColor: RgbColor;
+  underShirtColor: RgbColor;
+  pantsColor: RgbColor;
+  shoeColor: RgbColor;
+  voiceVariant: number;
+  voicePitch: number;
+};
+
+export type PermanentUpgrades = {
+  extraAccessory: boolean;
+  unlockedBiomeTorches: boolean;
+  usingBiomeTorches: boolean;
+  ateArtisanBread: boolean;
+  usedAegisCrystal: boolean;
+  usedAegisFruit: boolean;
+  usedArcaneCrystal: boolean;
+  usedGalaxyPearl: boolean;
+  usedGummyWorm: boolean;
+  usedAmbrosia: boolean;
+  downedDd2Event: boolean;
+};
+
+export type CharacterCounters = {
+  taxMoney: number;
+  pveDeaths: number;
+  pvpDeaths: number;
+};
+
+export type CharacterDocument = {
+  name: string;
+  difficulty: number;
+  playTimeTicks: string;
+  stats: CharacterStats;
+  appearance: CharacterAppearance;
+  upgrades: PermanentUpgrades;
+  counters: CharacterCounters;
 };
 
 export type PlayerDocument = {
   path: string;
   sourceHash: string;
   version: number;
-  name: string;
-  difficulty: number;
-  playTimeTicks: string;
-  coreStats: CoreStats;
+  character: CharacterDocument;
   inventory: InventoryItem[];
   equipment: EquipmentDocument;
   storage: StorageDocument;
@@ -90,6 +131,7 @@ export type ChangeEntry = {
 };
 
 export type EditorSnapshot = {
+  character: CharacterDocument;
   inventory: InventoryItem[];
   equipment: EquipmentDocument;
   storage: StorageDocument;

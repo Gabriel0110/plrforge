@@ -17,6 +17,7 @@ import {
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { EmptyState } from "./components/EmptyState";
+import { CharacterPanel } from "./components/CharacterPanel";
 import { InventoryGrid } from "./components/InventoryGrid";
 import { ItemInspector } from "./components/ItemInspector";
 import { ItemSearch } from "./components/ItemSearch";
@@ -73,7 +74,7 @@ function workspaceReducer(state: WorkspaceState, patch: Partial<WorkspaceState>)
 }
 
 const navigation: { id: View; label: string; icon: typeof IdentificationCard; phase?: string }[] = [
-  { id: "overview", label: "Overview", icon: IdentificationCard },
+  { id: "overview", label: "Character", icon: IdentificationCard },
   { id: "loadouts", label: "Loadouts", icon: ShieldCheck },
   { id: "inventory", label: "Inventory", icon: Backpack },
   { id: "storage", label: "Storage", icon: Database },
@@ -81,8 +82,6 @@ const navigation: { id: View; label: string; icon: typeof IdentificationCard; ph
   { id: "journey", label: "Journey", icon: Sparkle, phase: "Phase 3" },
   { id: "spawns", label: "Spawn points", icon: MapPin, phase: "Phase 3" },
 ];
-
-const difficultyNames = ["Classic", "Mediumcore", "Hardcore", "Journey"];
 
 function makeChangeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -138,27 +137,6 @@ function SideRail({ view, onView }: { view: View; onView: (view: View) => void }
         <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[12px] text-white/42 transition hover:bg-white/[0.04] hover:text-white/70"><GearSix className="size-[17px]" />Settings</button>
       </div>
     </nav>
-  );
-}
-
-function Overview({ player }: { player: PlayerDocument }) {
-  const stats = [
-    ["Health", `${player.coreStats.life} / ${player.coreStats.lifeMax}`],
-    ["Mana", `${player.coreStats.mana} / ${player.coreStats.manaMax}`],
-    ["Difficulty", difficultyNames[player.difficulty] ?? `Mode ${player.difficulty}`],
-    ["Hair style", player.coreStats.hair.toString()],
-    ["Skin variant", player.coreStats.skinVariant.toString()],
-    ["Team", player.coreStats.team === 0 ? "None" : player.coreStats.team.toString()],
-  ];
-  return (
-    <div className="min-h-0 overflow-y-auto px-8 py-7">
-      <p className="font-mono text-[10px] font-medium uppercase tracking-[0.15em] text-emerald-300/68">Character snapshot</p>
-      <h1 className="mt-2 text-2xl font-semibold tracking-[-0.045em] text-white/92">{player.name}</h1>
-      <p className="mt-2 max-w-[58ch] text-sm leading-6 text-white/40">The active player is decoded locally. Item edits across inventory, equipment, and storage are committed together through one guarded save transaction.</p>
-      <dl className="mt-8 divide-y divide-white/[0.08] border-y border-white/[0.08]">
-        {stats.map(([label, value]) => <div key={label} className="grid grid-cols-[180px_1fr] items-center py-4"><dt className="text-xs text-white/38">{label}</dt><dd className="font-mono text-sm text-white/78">{value}</dd></div>)}
-      </dl>
-    </div>
   );
 }
 
@@ -237,6 +215,14 @@ export default function App() {
   const applyChange = useCallback((document: EditableDocument, description: string, location: ItemLocation) => {
     dispatch({ type: "change", document, entry: { id: makeChangeId(), description, location: locationLabel(location) } });
   }, []);
+
+  const applyCharacterChange = useCallback((character: PlayerDocument["character"], description: string, location: string) => {
+    dispatch({
+      type: "change",
+      document: { ...editorDocument, character },
+      entry: { id: makeChangeId(), description, location },
+    });
+  }, [editorDocument]);
 
   const navigate = (next: View) => {
     setView(next);
@@ -335,10 +321,10 @@ export default function App() {
   const isItemView = view === "inventory" || view === "loadouts" || view === "storage";
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#0e1211] text-white selection:bg-emerald-400/25">
+    <div className="flex h-[100dvh] overflow-hidden flex-col bg-[#0e1211] text-white selection:bg-emerald-400/25">
       <header className="flex h-16 shrink-0 items-center gap-4 border-b border-white/[0.08] bg-[#101413]/95 px-4">
         <div className="flex w-[192px] items-center gap-2.5"><span aria-hidden="true" className="logo-mark"><span /><span /><span /></span><span className="text-[15px] font-semibold tracking-[-0.035em] text-white/92">PlrForge</span></div>
-        {currentPlayer ? <><div className="flex min-w-0 items-center gap-3 border-l border-white/10 pl-4"><div className="min-w-0"><p className="truncate text-[12px] font-semibold text-white/84">{currentPlayer.name}</p><p className="font-mono text-[9px] text-white/30">File version {currentPlayer.version}</p></div><span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.055] px-2 py-1 text-[10px] text-emerald-200/75 xl:flex"><span className="size-1.5 rounded-full bg-emerald-400" />Safe to edit</span></div><div className="ml-auto flex items-center gap-1.5"><button type="button" onClick={() => dispatch({ type: "undo" })} disabled={!editor.past.length} aria-label="Undo" className="toolbar-button"><ArrowCounterClockwise className="size-4" /></button><button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!editor.future.length} aria-label="Redo" className="toolbar-button"><ArrowUUpRight className="size-4" /></button>{desktop && <button type="button" onClick={openPlayer} className="toolbar-button ml-1 gap-2 px-3"><FolderOpen className="size-4" /><span className="hidden xl:inline">Open</span></button>}<button type="button" onClick={save} disabled={saving || editor.changes.length === 0} className="ml-2 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500 px-3.5 text-[12px] font-semibold text-[#07110d] transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/[0.07] disabled:text-white/26">{saving ? <span className="size-3.5 animate-pulse rounded bg-current/50" /> : <Check weight="bold" className="size-4" />}{saving ? "Verifying" : "Save changes"}</button></div></> : <p className="text-xs text-white/30">No player open</p>}
+        {currentPlayer ? <><div className="flex min-w-0 items-center gap-3 border-l border-white/10 pl-4"><div className="min-w-0"><p className="truncate text-[12px] font-semibold text-white/84">{currentPlayer.character.name}</p><p className="font-mono text-[9px] text-white/30">File version {currentPlayer.version}</p></div><span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.055] px-2 py-1 text-[10px] text-emerald-200/75 xl:flex"><span className="size-1.5 rounded-full bg-emerald-400" />Safe to edit</span></div><div className="ml-auto flex items-center gap-1.5"><button type="button" onClick={() => dispatch({ type: "undo" })} disabled={!editor.past.length} aria-label="Undo" className="toolbar-button"><ArrowCounterClockwise className="size-4" /></button><button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!editor.future.length} aria-label="Redo" className="toolbar-button"><ArrowUUpRight className="size-4" /></button>{desktop && <button type="button" onClick={openPlayer} className="toolbar-button ml-1 gap-2 px-3"><FolderOpen className="size-4" /><span className="hidden xl:inline">Open</span></button>}<button type="button" onClick={save} disabled={saving || editor.changes.length === 0} className="ml-2 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500 px-3.5 text-[12px] font-semibold text-[#07110d] transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/[0.07] disabled:text-white/26">{saving ? <span className="size-3.5 animate-pulse rounded bg-current/50" /> : <Check weight="bold" className="size-4" />}{saving ? "Verifying" : "Save changes"}</button></div></> : <p className="text-xs text-white/30">No player open</p>}
       </header>
 
       {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} onOpen={openPlayer} onLoad={loadPath} /> : loadState === "error" ? <main className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : (
@@ -357,7 +343,7 @@ export default function App() {
                 </main>
                 <ItemInspector item={selectedItem} slotLabel={targetLabel} canStack={canStack(selected)} canFavorite={canFavorite(selected)} onPatch={patchSelected} onRemove={removeSelected} onCopy={() => setClipboard({ item: selectedItem, source: selected, mode: "copy" })} onMove={() => setClipboard({ item: selectedItem, source: selected, mode: "move" })} onPaste={paste} pasteLabel={clipboard && !sameLocation(clipboard.source, selected) ? itemName(clipboard.item.itemId) : null} />
               </div>
-            ) : view === "overview" ? <Overview player={currentPlayer} /> : <PlannedView view={view} />}
+            ) : view === "overview" ? <CharacterPanel character={editor.character} onChange={applyCharacterChange} /> : <PlannedView view={view} />}
 
             <footer className="border-t border-white/[0.08] bg-[#111513]">
               {(error || message || clipboard) && <div className={`flex items-start gap-2 border-b border-white/[0.06] px-4 py-2 text-[11px] ${error ? "text-rose-300/84" : "text-white/42"}`}>{error ? <Warning className="mt-px size-3.5 shrink-0" /> : <Check className="mt-px size-3.5 shrink-0 text-emerald-300/70" />}<span className="truncate">{error ?? (clipboard ? `${clipboard.mode === "move" ? "Moving" : "Copied"} ${itemName(clipboard.item.itemId)} from ${locationLabel(clipboard.source)}. Select a destination and paste.` : message)}</span></div>}

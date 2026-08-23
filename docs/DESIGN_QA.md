@@ -22,7 +22,7 @@ Both images were inspected at original resolution with `view_image` after the in
 
 ## Exact copy differences
 
-- `Character` → `Overview`
+- `Character` remains `Character`
 - `Equipment` → `Loadouts`
 - `Buffs` → `Effects`
 - `Research` → `Journey`
@@ -49,6 +49,8 @@ Both images were inspected at original resolution with `view_image` after the in
 - Copied Magic Lantern from inventory to Safe slot 4 and confirmed the target, ledger, and Save state changed together.
 - Confirmed navigation resets the workspace scroll position and browser console output remains clean.
 - React Doctor completed at 100/100 with no diagnostics.
+- Opened the Character workspace at 1280×720 and verified identity, stats, appearance, permanent upgrades, records, warnings, shared undo/redo, and unsaved/save state.
+- Confirmed the Character pane owns vertical scrolling while the header and change ledger stay pinned; no page or horizontal overflow remains.
 
 ## Remaining deviations
 
