@@ -3,12 +3,14 @@ import {
   ArrowUUpRight,
   Backpack,
   Check,
+  CircleNotch,
   ClockCounterClockwise,
   Database,
   Flask,
   FolderOpen,
   GearSix,
   IdentificationCard,
+  ImagesSquare,
   MapPin,
   ShieldCheck,
   Sparkle,
@@ -42,6 +44,7 @@ import {
   type EditableDocument,
 } from "./lib/editor";
 import { choosePlayerFile, discoverPlayers, isDesktop, loadPlayer, savePlayer } from "./lib/native";
+import { useGameAssets } from "./lib/assets";
 import type {
   CatalogItem,
   DiscoveredPlayer,
@@ -140,6 +143,27 @@ function SideRail({ view, onView }: { view: View; onView: (view: View) => void }
         <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[12px] text-white/42 transition hover:bg-white/[0.04] hover:text-white/70"><GearSix className="size-[17px]" />Settings</button>
       </div>
     </nav>
+  );
+}
+
+function AssetStatusButton() {
+  const { status, locate } = useGameAssets();
+  if (status.state === "preview") return null;
+  if (status.state === "preparing") {
+    return <span title={status.message} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.07] px-3 text-[10px] text-white/38"><CircleNotch className="size-3.5 animate-spin" /><span className="hidden xl:inline">Preparing icons</span></span>;
+  }
+  const ready = status.state === "ready";
+  return (
+    <button
+      type="button"
+      onClick={() => void locate()}
+      title={`${status.message}${status.sourcePath ? `\n${status.sourcePath}` : ""}`}
+      aria-label={ready ? "Change Terraria game icon source" : "Locate Terraria to add game icons"}
+      className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-[10px] transition ${ready ? "border-sky-300/12 bg-sky-300/[0.035] text-sky-100/58 hover:bg-sky-300/[0.07]" : "border-amber-300/15 bg-amber-300/[0.035] text-amber-100/68 hover:bg-amber-300/[0.07]"}`}
+    >
+      <ImagesSquare className="size-3.5" />
+      <span className="hidden xl:inline">{ready ? `${status.itemCount.toLocaleString()} item icons` : "Add game icons"}</span>
+    </button>
   );
 }
 
@@ -325,7 +349,7 @@ export default function App() {
     <div className="flex h-[100dvh] overflow-hidden flex-col bg-[#0e1211] text-white selection:bg-emerald-400/25">
       <header className="flex h-16 shrink-0 items-center gap-4 border-b border-white/[0.08] bg-[#101413]/95 px-4">
         <div className="flex w-[192px] items-center gap-2.5"><span aria-hidden="true" className="logo-mark"><span /><span /><span /></span><span className="text-[15px] font-semibold tracking-[-0.035em] text-white/92">PlrForge</span></div>
-        {currentPlayer ? <><div className="flex min-w-0 items-center gap-3 border-l border-white/10 pl-4"><div className="min-w-0"><p className="truncate text-[12px] font-semibold text-white/84">{currentPlayer.character.name}</p><p className="font-mono text-[9px] text-white/30">File version {currentPlayer.version}</p></div><span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.055] px-2 py-1 text-[10px] text-emerald-200/75 xl:flex"><span className="size-1.5 rounded-full bg-emerald-400" />Safe to edit</span></div><div className="ml-auto flex items-center gap-1.5"><button type="button" onClick={() => dispatch({ type: "undo" })} disabled={!editor.past.length} aria-label="Undo" className="toolbar-button"><ArrowCounterClockwise className="size-4" /></button><button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!editor.future.length} aria-label="Redo" className="toolbar-button"><ArrowUUpRight className="size-4" /></button>{desktop && <button type="button" onClick={openPlayer} className="toolbar-button ml-1 gap-2 px-3"><FolderOpen className="size-4" /><span className="hidden xl:inline">Open</span></button>}<button type="button" onClick={save} disabled={saving || editor.changes.length === 0} className="ml-2 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500 px-3.5 text-[12px] font-semibold text-[#07110d] transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/[0.07] disabled:text-white/26">{saving ? <span className="size-3.5 animate-pulse rounded bg-current/50" /> : <Check weight="bold" className="size-4" />}{saving ? "Verifying" : "Save changes"}</button></div></> : <p className="text-xs text-white/30">No player open</p>}
+        {currentPlayer ? <><div className="flex min-w-0 items-center gap-3 border-l border-white/10 pl-4"><div className="min-w-0"><p className="truncate text-[12px] font-semibold text-white/84">{currentPlayer.character.name}</p><p className="font-mono text-[9px] text-white/30">File version {currentPlayer.version}</p></div><span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.055] px-2 py-1 text-[10px] text-emerald-200/75 xl:flex"><span className="size-1.5 rounded-full bg-emerald-400" />Safe to edit</span></div><div className="ml-auto flex items-center gap-1.5"><AssetStatusButton /><button type="button" onClick={() => dispatch({ type: "undo" })} disabled={!editor.past.length} aria-label="Undo" className="toolbar-button"><ArrowCounterClockwise className="size-4" /></button><button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!editor.future.length} aria-label="Redo" className="toolbar-button"><ArrowUUpRight className="size-4" /></button>{desktop && <button type="button" onClick={openPlayer} className="toolbar-button ml-1 gap-2 px-3"><FolderOpen className="size-4" /><span className="hidden xl:inline">Open</span></button>}<button type="button" onClick={save} disabled={saving || editor.changes.length === 0} className="ml-2 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500 px-3.5 text-[12px] font-semibold text-[#07110d] transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/[0.07] disabled:text-white/26">{saving ? <span className="size-3.5 animate-pulse rounded bg-current/50" /> : <Check weight="bold" className="size-4" />}{saving ? "Verifying" : "Save changes"}</button></div></> : <><p className="text-xs text-white/30">No player open</p><div className="ml-auto"><AssetStatusButton /></div></>}
       </header>
 
       {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} onOpen={openPlayer} onLoad={loadPath} /> : loadState === "error" ? <main className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : (

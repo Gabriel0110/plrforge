@@ -10,6 +10,8 @@
 - Exercise a variable-length name, stats, appearance color, voice, permanent-upgrade, and death-counter edit on a disposable copy.
 - Exercise saved-buff add/remove and duration changes on a disposable copy.
 - Exercise variable-length spawn and research lists, all three per-player Journey powers, and both Super Cart bits on a disposable copy.
+- Verify standard-path game-asset discovery, first-run extraction, cached relaunch, manual folder selection, and no-install glyph fallback.
+- Confirm animated items show one inventory frame and item/buff icons render through the packaged asset protocol.
 - `npx -y react-doctor@latest . --verbose --scope changed`
 - Confirm the backup opens and the original source hash changes only after save.
 - Verify 1280×720, 1440×900, and Windows high-DPI layouts.
@@ -20,12 +22,14 @@
 - Configure Developer ID Application signing.
 - Notarize and staple the `.app`/`.dmg`.
 - Test first launch, file picker permissions, backup access, and Steam Cloud warning.
+- Test Steam and nonstandard game-asset paths on both a clean and populated icon cache.
 
 ## Windows
 
 - Build x64 MSI and NSIS installer in GitHub Actions.
 - Sign executables and installers with an EV/OV certificate or trusted signing service.
 - Test WebView2 bootstrap, Documents discovery, non-ASCII usernames, and locked save files.
+- Test default/secondary Steam libraries, GOG paths, folder selection, and asset-protocol PNG display.
 
 ## Public release
 

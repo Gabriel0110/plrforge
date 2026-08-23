@@ -24,6 +24,12 @@ npm run desktop:dev
 
 The browser build opens a safe demo character. Native file access is available only inside Tauri.
 
+## Local game icons
+
+The desktop app automatically looks for Steam/GOG Terraria installations in standard macOS, Windows, and Linux locations. When found, it reads only `Content/Images/Item_*.xnb` and `Buff_*.xnb`, strictly decodes XNA color textures, selects Terraria's first inventory frame for animated items, and writes regular PNGs to PlrForge's private application cache. The first extraction currently prepares 6,134 item icons and 400 buff icons from Terraria v325; later launches reuse the fingerprinted cache.
+
+If Terraria is installed somewhere unusual, use the game-icons control in the header and choose the Terraria install, `Content`, or `Images` folder. Icons are optional: loading and editing remain fully functional with the built-in text glyphs.
+
 ## Save safety
 
 PlrForge never mutates a loaded file in memory without tracking the change. Before saving it:
@@ -38,7 +44,7 @@ Do not edit a character while Terraria is running. Steam Cloud can otherwise rac
 
 ## Data and licensing
 
-The searchable item and buff metadata is distributed under the Microsoft Public License and derived in part from the TEdit project. See `THIRD_PARTY_MS-PL.txt`. PlrForge does not bundle Terraria sprites or other game assets. A future local asset adapter can read user-owned resources from an installed copy of Terraria.
+The searchable item and buff metadata is distributed under the Microsoft Public License and derived in part from the TEdit project. See `THIRD_PARTY_MS-PL.txt`. PlrForge does not bundle, download, or hotlink Terraria sprites or other game assets. Its optional asset adapter creates a disposable local cache from the user's own installed copy. Terraria and its artwork are owned by Re-Logic.
 
 ## Status
 

@@ -16,7 +16,7 @@ Both images were inspected at original resolution with `view_image` after the in
 3. **Search model — matched.** The exact placeholder `Find any item by name or ID` is implemented with Command/Ctrl+K focus, target-slot context, numeric-ID matching, and a no-catalog-result explanation.
 4. **Slot clarity — improved from concept.** The implementation numbers every slot directly, labels main/coin/ammo ranges, and exposes full item/stack names through accessible button labels. It removes the concept's decorative column numbering.
 5. **Safety state — matched and extended.** `Safe to edit`, file version, unsaved count, and individual changes are visible. The native implementation adds compatibility confirmation, disabled save on a clean document, and backup-path confirmation after save.
-6. **Item visuals — intentional deviation.** The concept contains generated sprite-like art. The implementation uses neutral name glyphs because PlrForge does not bundle Re-Logic assets. A future adapter may read user-owned local assets.
+6. **Item visuals — locally faithful.** PlrForge does not bundle Re-Logic assets. The packaged app discovers the user's installation, strictly extracts item/buff textures into its private cache, and falls back to neutral name glyphs when those assets are unavailable.
 7. **Window chrome — intentional deviation.** The concept draws macOS traffic lights inside the mockup. Tauri uses the real system title bar, so the web layer does not imitate native controls.
 8. **Change ledger — simplified.** The concept shows a tall two-row log. The implementation uses a compact persistent strip with the three latest edits, preserving more vertical space for the 58-slot grid.
 
@@ -55,9 +55,13 @@ Both images were inspected at original resolution with `view_image` after the in
 - Enabled personal Journey Godmode, completed Dirt Block research, bulk-completed all tracked research to 9999, and verified serialized-state labels and counts.
 - Added and rapidly edited a `QA World / 424242 / 515 / 220` spawn record, removed it, and confirmed global Undo restored the complete record.
 - Rechecked all three new workspaces at 1280×720: the body remains fixed, the footer remains pinned, the workspace owns scrolling, and browser warnings/errors remain empty.
+- Packaged the native app with the cache-scoped Tauri asset protocol, automatically discovered the current Steam installation, and extracted 6,134 item plus 400 buff textures without modifying the source installation.
+- Verified Magic Lantern (3043) in search, regular and animated inventory items, item inspector art, active buff cards, and Journey research rows in the native WebView.
+- Detected the Fallen Star's eight-frame source sheet during visual QA, traced the exact animation table and `ItemID.Sets.IsFood` membership from the installed v325 assembly, implemented first-frame normalization, rebuilt, and confirmed the corrected single-frame icon.
+- Kept the live `NewBruv.plr` read-only throughout native asset QA; Save remained disabled.
 
 ## Remaining deviations
 
-- Real item sprites are absent by policy and licensing design.
+- Game sprites require a local Terraria installation and intentionally fall back to text glyphs when one is unavailable.
 - Historical `.plr` versions remain fail-closed until their own codecs and golden fixtures are implemented.
 - The offline item and buff catalogs currently contribute a roughly 1.1 MB uncompressed JavaScript chunk (about 221 KB gzip). They should move to indexed lazy-loaded resources before 1.0.

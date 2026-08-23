@@ -32,9 +32,17 @@ The version registry rejects anything other than 325 today. Each future codec mu
 
 Search metadata and save compatibility are separate concerns. Unknown but valid numeric IDs remain editable even when the friendly-name catalog lags a Terraria release. Bundled search data is replaceable; game assets are never required to open or save a character.
 
+## Local asset adapter
+
+PlrForge never ships or fetches Terraria artwork. A native Tauri command discovers a user-owned Steam/GOG installation (or accepts a folder chosen by the user), fingerprints the numeric `Item_*.xnb` and `Buff_*.xnb` sources, and decodes only XNA version-5 `Texture2DReader` color payloads. LZX frames, type readers, surface format, mip count, dimensions, and exact RGBA length are all validated before output.
+
+The format implementation is grounded in the open-source [TExtract XNB extractor](https://github.com/Antag99/TExtract/blob/master/TExtract/src/com/github/antag99/textract/extract/XnbExtractor.java), uses the audited [`lzxd` Rust decoder](https://docs.rs/lzxd/latest/lzxd/), and follows Tauri's [scoped asset-protocol model](https://v2.tauri.app/security/asset-protocol/).
+
+Animated item sheets are cropped by Terraria v325's exact registered frame rules, including the current `ItemID.Sets.IsFood` membership. Extracted PNGs live below the OS application-cache directory. Tauri's asset protocol is enabled only for `$APPCACHE/terraria-assets/**/*`; original game resources and unrelated filesystem locations are never exposed to the webview. A completed fingerprint is reused on later launches, while a changed installation produces a new cache. Missing or invalid assets degrade to deterministic text glyphs and never block save editing.
+
 ## Testing strategy
 
-- Rust unit tests cover 7-bit strings, variable-length Unicode names, dynamic v325 offsets, character validation, all character-field round trips, active/inactive loadout mapping, equipment stack validation, buff/spawn/research/Journey mutation, encryption and zero-padding round trips, and untouched-tail assertions after multiple variable-length splices.
+- Rust unit tests cover 7-bit strings, variable-length Unicode names, dynamic v325 offsets, character validation, all character-field round trips, active/inactive loadout mapping, equipment stack validation, buff/spawn/research/Journey mutation, encryption and zero-padding round trips, untouched-tail assertions after multiple variable-length splices, strict XNB texture parsing, LZX decoding against locally installed real assets when available, animation-frame cropping, and Steam library-path parsing.
 - Golden fixtures should be synthetic or explicitly user-approved and must never contain personal player files in source control.
 - React tests cover the Character, Effects, Journey, and Spawn Points workspaces, item search, slot replacement, validation, shared undo/redo, loading, empty, and error states.
 - Native smoke tests load a copied fixture, change character, item, buff, spawn, research, Journey-power, and Super Cart regions, save it, re-open it, and compare the complete normalized models.

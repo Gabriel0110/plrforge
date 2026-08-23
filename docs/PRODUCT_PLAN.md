@@ -56,9 +56,10 @@ Global command search finds both actions and items. An item can be added to the 
 - All loadouts, vanity, dyes, misc equipment, and four storage banks.
 - Slot compatibility from current item metadata.
 - Cross-surface copy, move, safe swap, and keyboard-accessible controls.
-- Locally extracted, user-owned item icons with a no-assets fallback.
+- Automatic Steam/GOG discovery and locally extracted, user-owned item and buff icons with a no-assets fallback.
+- Strict XNB/LZX decoding, fingerprinted OS cache, exact v325 animation-frame normalization, and a manual folder picker.
 
-The codec and editing work is complete. Local item-icon extraction remains an optional visual enhancement; the built-in no-assets glyph fallback is production-safe.
+The codec, editing work, and optional local icon adapter are complete. The built-in no-assets glyph fallback remains production-safe.
 
 ### Phase 3 — character systems (implemented)
 
