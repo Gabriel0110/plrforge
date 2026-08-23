@@ -335,7 +335,7 @@ fn first_item_frame(texture: Texture, frame_count: u32) -> Result<Texture, Asset
     if frame_count <= 1 {
         return Ok(texture);
     }
-    if texture.height % frame_count != 0 {
+    if !texture.height.is_multiple_of(frame_count) {
         return Err(AssetError::InvalidXnb(format!(
             "animated texture height {} is not divisible by {frame_count}",
             texture.height

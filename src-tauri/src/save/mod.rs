@@ -1,3 +1,4 @@
+mod codec;
 mod crypto;
 mod v325;
 
@@ -9,6 +10,7 @@ use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 use thiserror::Error;
 
+pub use codec::PlayerCompatibility;
 pub use v325::{
     CharacterDocument, EffectsDocument, EquipmentDocument, ItemSlot, JourneyDocument,
     PlayerDocument, SpawnPoint, StorageDocument,
@@ -22,9 +24,11 @@ pub enum SaveError {
     Io(#[from] std::io::Error),
     #[error("The encrypted player file is damaged or incomplete")]
     Crypto,
-    #[error("Player file {0} is not supported yet. PlrForge currently supports version 325")]
+    #[error(
+        "Player file v{0} is not editable in this build. PlrForge's latest verified format is v325"
+    )]
     UnsupportedVersion(i32),
-    #[error("The player file is truncated or has an invalid v325 layout")]
+    #[error("The player file is truncated or has an invalid supported layout")]
     Truncated,
     #[error("The player file changed after it was opened. Reload it before saving")]
     SourceChanged,
@@ -41,6 +45,7 @@ pub struct DiscoveredPlayer {
     pub name: String,
     pub version: i32,
     pub modified_at: u64,
+    pub compatibility: PlayerCompatibility,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -109,7 +114,7 @@ pub fn discover_players() -> Result<Vec<DiscoveredPlayer>, SaveError> {
             if path.extension().and_then(|value| value.to_str()) != Some("plr") {
                 continue;
             }
-            let Ok(document) = load_path(&path) else {
+            let Ok((compatibility, document)) = inspect_path(&path) else {
                 continue;
             };
             let modified_at = entry
@@ -120,9 +125,18 @@ pub fn discover_players() -> Result<Vec<DiscoveredPlayer>, SaveError> {
                 .map_or(0, |duration| duration.as_secs());
             players.push(DiscoveredPlayer {
                 path: path.to_string_lossy().into_owned(),
-                name: document.character.name,
-                version: document.version,
+                name: document
+                    .as_ref()
+                    .map(|value| value.character.name.clone())
+                    .or_else(|| {
+                        path.file_stem()
+                            .and_then(|value| value.to_str())
+                            .map(str::to_owned)
+                    })
+                    .unwrap_or_else(|| "Unknown player".into()),
+                version: compatibility.file_version,
                 modified_at,
+                compatibility,
             });
         }
     }
@@ -135,42 +149,41 @@ pub fn load_player(path: &str) -> Result<PlayerDocument, SaveError> {
     load_path(&path)
 }
 
+pub fn inspect_player(path: &str) -> Result<PlayerCompatibility, SaveError> {
+    let path = checked_path(path)?;
+    inspect_path(&path).map(|(compatibility, _)| compatibility)
+}
+
+fn inspect_path(path: &Path) -> Result<(PlayerCompatibility, Option<PlayerDocument>), SaveError> {
+    let encrypted = fs::read(path)?;
+    let source_hash = hash(&encrypted);
+    let plaintext = crypto::decrypt(&encrypted)?;
+    let compatibility = codec::inspect_plaintext(&plaintext)?;
+    let document = if compatibility.can_edit {
+        Some(codec::parse_document(path, &source_hash, &plaintext)?)
+    } else {
+        None
+    };
+    Ok((compatibility, document))
+}
+
 fn load_path(path: &Path) -> Result<PlayerDocument, SaveError> {
     let encrypted = fs::read(path)?;
     let source_hash = hash(&encrypted);
     let plaintext = crypto::decrypt(&encrypted)?;
-    v325::parse(path, &source_hash, &plaintext)
+    codec::parse_document(path, &source_hash, &plaintext)
 }
 
 pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError> {
     let path = checked_path(&request.path)?;
-    v325::validate_document(
-        &request.character,
-        &request.effects,
-        &request.journey,
-        &request.spawn_points,
-        &request.inventory,
-        &request.equipment,
-        &request.storage,
-    )?;
-
     let encrypted = fs::read(&path)?;
     if hash(&encrypted) != request.source_hash {
         return Err(SaveError::SourceChanged);
     }
     let plaintext = crypto::decrypt(&encrypted)?;
-    let patched = v325::patch_document(
-        &plaintext,
-        v325::PatchDocument {
-            character: &request.character,
-            effects: &request.effects,
-            journey: &request.journey,
-            spawn_points: &request.spawn_points,
-            inventory: &request.inventory,
-            equipment: &request.equipment,
-            storage: &request.storage,
-        },
-    )?;
+    let codec = codec::codec_for_plaintext(&plaintext)?;
+    codec.validate(&request)?;
+    let patched = codec.patch(&plaintext, &request)?;
     let staged_encrypted = crypto::encrypt(&patched)?;
 
     let backup_path = create_backup_copy(&path, None)?;
@@ -188,7 +201,7 @@ pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError>
             "encrypted round trip did not reproduce the patched payload".into(),
         ));
     }
-    let verified = v325::parse(&stage_path, &hash(&staged_encrypted), &staged_plaintext)?;
+    let verified = codec.parse(&stage_path, &hash(&staged_encrypted), &staged_plaintext)?;
     if verified.character != request.character
         || verified.effects != request.effects
         || verified.journey != request.journey
@@ -244,7 +257,7 @@ pub fn list_backups(player_path: &str) -> Result<Vec<BackupEntry>, SaveError> {
                     Some(document.character.name),
                     Some(document.version),
                     true,
-                    "Verified Terraria v325 backup".into(),
+                    codec::classify_version(document.version).format_label,
                 ),
                 Err(error) => (None, None, false, error.to_string()),
             };
@@ -269,7 +282,7 @@ pub fn restore_backup(player_path: &str, backup_path: &str) -> Result<RestoreRec
     let backup = checked_backup_path_for(&player, backup_path)?;
     let encrypted = fs::read(&backup)?;
     let plaintext = crypto::decrypt(&encrypted)?;
-    v325::parse(&backup, &hash(&encrypted), &plaintext)?;
+    codec::parse_document(&backup, &hash(&encrypted), &plaintext)?;
 
     let safety_backup = create_backup_copy(&player, Some("pre-restore"))?;
     let stage = staged_path(&player);
@@ -277,7 +290,7 @@ pub fn restore_backup(player_path: &str, backup_path: &str) -> Result<RestoreRec
     let verification = (|| {
         let staged_bytes = fs::read(&stage)?;
         let staged_plaintext = crypto::decrypt(&staged_bytes)?;
-        v325::parse(&stage, &hash(&staged_bytes), &staged_plaintext)?;
+        codec::parse_document(&stage, &hash(&staged_bytes), &staged_plaintext)?;
         Ok::<(), SaveError>(())
     })();
     if let Err(error) = verification {
@@ -405,6 +418,7 @@ mod integration_tests {
         let temporary = tempfile::tempdir().unwrap();
         let copy = temporary.path().join("fixture.plr");
         fs::copy(source, &copy).unwrap();
+        let original_encrypted = fs::read(&copy).unwrap();
 
         let before = load_path(&copy).unwrap();
         let receipt = save_player(SavePlayerRequest {
@@ -427,10 +441,36 @@ mod integration_tests {
         assert_eq!(before.equipment, after.equipment);
         assert_eq!(before.storage, after.storage);
         assert!(Path::new(&receipt.backup_path).exists());
+        assert_eq!(fs::read(&copy).unwrap(), original_encrypted);
+        assert_eq!(fs::read(&receipt.backup_path).unwrap(), original_encrypted);
+        assert_eq!(receipt.source_hash, before.source_hash);
         eprintln!(
-            "verified {} v{} across character, item, effect, Journey, and spawn records; backup created",
+            "verified byte-identical no-op round trip for {} v{} across character, item, effect, Journey, and spawn records; backup created",
             after.character.name, after.version
         );
+    }
+
+    #[test]
+    fn compatibility_probe_refuses_unverified_formats_before_parsing() {
+        for (version, expected_state) in [
+            (324, codec::CompatibilityState::Untested),
+            (326, codec::CompatibilityState::Unsupported),
+        ] as [(i32, codec::CompatibilityState); 2]
+        {
+            let temporary = tempfile::tempdir().unwrap();
+            let path = temporary.path().join(format!("v{version}.plr"));
+            let mut plaintext = vec![0u8; 16];
+            plaintext[..4].copy_from_slice(&version.to_le_bytes());
+            fs::write(&path, crypto::encrypt(&plaintext).unwrap()).unwrap();
+
+            let compatibility = inspect_player(&path.to_string_lossy()).unwrap();
+            assert_eq!(compatibility.state, expected_state);
+            assert!(!compatibility.can_edit);
+            assert!(matches!(
+                load_path(&path),
+                Err(SaveError::UnsupportedVersion(found)) if found == version
+            ));
+        }
     }
 
     #[test]

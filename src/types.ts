@@ -127,11 +127,20 @@ export type PlayerDocument = {
   storage: StorageDocument;
 };
 
+export type PlayerCompatibility = {
+  state: "supported" | "untested" | "unsupported";
+  fileVersion: number;
+  formatLabel: string;
+  canEdit: boolean;
+  message: string;
+};
+
 export type DiscoveredPlayer = {
   path: string;
   name: string;
   version: number;
   modifiedAt: number;
+  compatibility: PlayerCompatibility;
 };
 
 export type SaveReceipt = {

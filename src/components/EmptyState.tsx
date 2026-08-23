@@ -1,4 +1,4 @@
-import { FileArrowUp, FolderOpen, ShieldCheck } from "@phosphor-icons/react";
+import { CheckCircle, FileArrowUp, FolderOpen, ShieldCheck, WarningCircle } from "@phosphor-icons/react";
 import type { DiscoveredPlayer } from "../types";
 
 type Props = {
@@ -26,8 +26,15 @@ export function EmptyState({ players, onOpen, onLoad }: Props) {
         <div className="mt-5 space-y-2">
           {players.length ? players.map((player) => (
             <button type="button" key={player.path} onClick={() => onLoad(player.path)} className="w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 py-3 text-left transition hover:border-white/18 hover:bg-white/[0.05] active:scale-[0.99]">
-              <span className="block text-sm font-medium text-white/80">{player.name}</span>
+              <span className="flex items-center justify-between gap-3">
+                <span className="block truncate text-sm font-medium text-white/80">{player.name}</span>
+                <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-medium ${player.compatibility.canEdit ? "border-emerald-300/14 bg-emerald-300/[0.045] text-emerald-200/68" : "border-amber-300/14 bg-amber-300/[0.045] text-amber-200/68"}`}>
+                  {player.compatibility.canEdit ? <CheckCircle weight="fill" className="size-3" /> : <WarningCircle weight="fill" className="size-3" />}
+                  {player.compatibility.state === "supported" ? "Verified" : player.compatibility.state === "untested" ? "Needs fixture" : "Update needed"}
+                </span>
+              </span>
               <span className="mt-1 block font-mono text-[10px] text-white/30">File version {player.version}</span>
+              {!player.compatibility.canEdit && <span className="mt-1.5 block text-[10px] leading-4 text-amber-100/45">{player.compatibility.message}</span>}
             </button>
           )) : <p className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs leading-5 text-white/30">No supported local players found yet.</p>}
         </div>

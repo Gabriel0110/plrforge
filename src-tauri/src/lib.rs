@@ -3,7 +3,8 @@ mod save;
 mod updates;
 
 use save::{
-    BackupEntry, DiscoveredPlayer, PlayerDocument, RestoreReceipt, SavePlayerRequest, SaveReceipt,
+    BackupEntry, DiscoveredPlayer, PlayerCompatibility, PlayerDocument, RestoreReceipt,
+    SavePlayerRequest, SaveReceipt,
 };
 use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
@@ -16,6 +17,11 @@ fn discover_players() -> Result<Vec<DiscoveredPlayer>, String> {
 #[tauri::command]
 fn load_player(path: String) -> Result<PlayerDocument, String> {
     save::load_player(&path).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn inspect_player(path: String) -> Result<PlayerCompatibility, String> {
+    save::inspect_player(&path).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -93,6 +99,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             discover_players,
+            inspect_player,
             load_player,
             save_player,
             list_backups,

@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 const VERSION: i32 = 325;
+const VERSION_317: i32 = 317;
 const METADATA_END: usize = 24;
 const HEADER_AFTER_NAME: usize = 80;
 const ARMOR_RECORDS: usize = 20;
@@ -15,9 +16,53 @@ const EQUIPMENT_RECORD_SIZE: usize = 6;
 const COMPACT_ITEM_SIZE: usize = 5;
 const INVENTORY_RECORD_SIZE: usize = 10;
 const BANK_RECORD_SIZE: usize = 9;
-const LOADOUT_SIZE: usize = 310;
 const BUFF_RECORDS: usize = 44;
 const BUFF_RECORD_SIZE: usize = 8;
+
+#[derive(Debug, Clone, Copy)]
+struct Format {
+    version: i32,
+    header_after_name: usize,
+    equipment_record_size: usize,
+    serialized_item_size: usize,
+    equipment_favorites: bool,
+}
+
+impl Format {
+    const V317: Self = Self {
+        version: VERSION_317,
+        header_after_name: 79,
+        equipment_record_size: 5,
+        serialized_item_size: 9,
+        equipment_favorites: false,
+    };
+
+    const V325: Self = Self {
+        version: VERSION,
+        header_after_name: HEADER_AFTER_NAME,
+        equipment_record_size: EQUIPMENT_RECORD_SIZE,
+        serialized_item_size: INVENTORY_RECORD_SIZE,
+        equipment_favorites: true,
+    };
+
+    fn from_version(version: i32) -> Result<Self, SaveError> {
+        match version {
+            VERSION_317 => Ok(Self::V317),
+            VERSION => Ok(Self::V325),
+            _ => Err(SaveError::UnsupportedVersion(version)),
+        }
+    }
+
+    fn loadout_size(self) -> usize {
+        ARMOR_RECORDS * self.serialized_item_size
+            + DYE_RECORDS * self.serialized_item_size
+            + DYE_RECORDS
+    }
+
+    fn post_bread_shift(self) -> usize {
+        usize::from(self.version >= 324)
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -192,6 +237,7 @@ pub struct StorageDocument {
 
 #[derive(Debug, Clone, Copy)]
 struct Layout {
+    format: Format,
     name_end: usize,
     armor: usize,
     dyes: usize,
@@ -213,10 +259,28 @@ struct Layout {
 }
 
 pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocument, SaveError> {
+    parse_version(path, source_hash, data, VERSION)
+}
+
+pub(super) fn parse_v317(
+    path: &Path,
+    source_hash: &str,
+    data: &[u8],
+) -> Result<PlayerDocument, SaveError> {
+    parse_version(path, source_hash, data, VERSION_317)
+}
+
+fn parse_version(
+    path: &Path,
+    source_hash: &str,
+    data: &[u8],
+    expected_version: i32,
+) -> Result<PlayerDocument, SaveError> {
     let version = read_i32(data, 0)?;
-    if version != VERSION {
+    if version != expected_version {
         return Err(SaveError::UnsupportedVersion(version));
     }
+    let format = Format::from_version(version)?;
     let (name, name_end) = read_dotnet_string(data, METADATA_END)?;
     let layout = locate_layout(data)?;
     let mut cursor = name_end;
@@ -238,7 +302,8 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
     let mana_max = read_i32(data, cursor)?;
 
     let header = name_end;
-    let colors = header + 59;
+    let post_bread_shift = format.post_bread_shift();
+    let colors = header + 58 + post_bread_shift;
     let appearance = CharacterAppearance {
         hair,
         hair_dye,
@@ -270,7 +335,13 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
     }
     let current_loadout_index = current_loadout_index as usize;
     let mut loadouts = (0..LOADOUT_RECORDS)
-        .map(|index| read_serialized_loadout(data, layout.loadouts + index * LOADOUT_SIZE))
+        .map(|index| {
+            read_serialized_loadout(
+                data,
+                layout.loadouts + index * layout.format.loadout_size(),
+                layout.format,
+            )
+        })
         .collect::<Result<Vec<_>, _>>()?;
     loadouts[current_loadout_index] = read_active_loadout(data, layout)?;
 
@@ -313,18 +384,18 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
                 unlocked_biome_torches: read_bool(data, header + 36)?,
                 using_biome_torches: read_bool(data, header + 37)?,
                 ate_artisan_bread: read_bool(data, header + 38)?,
-                used_aegis_crystal: read_bool(data, header + 40)?,
-                used_aegis_fruit: read_bool(data, header + 41)?,
-                used_arcane_crystal: read_bool(data, header + 42)?,
-                used_galaxy_pearl: read_bool(data, header + 43)?,
-                used_gummy_worm: read_bool(data, header + 44)?,
-                used_ambrosia: read_bool(data, header + 45)?,
-                downed_dd2_event: read_bool(data, header + 46)?,
+                used_aegis_crystal: read_bool(data, header + 39 + post_bread_shift)?,
+                used_aegis_fruit: read_bool(data, header + 40 + post_bread_shift)?,
+                used_arcane_crystal: read_bool(data, header + 41 + post_bread_shift)?,
+                used_galaxy_pearl: read_bool(data, header + 42 + post_bread_shift)?,
+                used_gummy_worm: read_bool(data, header + 43 + post_bread_shift)?,
+                used_ambrosia: read_bool(data, header + 44 + post_bread_shift)?,
+                downed_dd2_event: read_bool(data, header + 45 + post_bread_shift)?,
             },
             counters: CharacterCounters {
-                tax_money: read_i32(data, header + 47)?,
-                pve_deaths: read_i32(data, header + 51)?,
-                pvp_deaths: read_i32(data, header + 55)?,
+                tax_money: read_i32(data, header + 46 + post_bread_shift)?,
+                pve_deaths: read_i32(data, header + 50 + post_bread_shift)?,
+                pvp_deaths: read_i32(data, header + 54 + post_bread_shift)?,
             },
         },
         effects: read_effects(data, layout.buffs)?,
@@ -399,7 +470,7 @@ fn read_spawn_points(data: &[u8], mut cursor: usize) -> Result<Vec<SpawnPoint>, 
         cursor = end;
     }
     Err(SaveError::Validation(
-        "spawn-point list has no v325 terminator".into(),
+        "spawn-point list has no valid terminator".into(),
     ))
 }
 
@@ -457,7 +528,7 @@ fn read_journey_powers(
             }
             _ => {
                 return Err(SaveError::Validation(format!(
-                    "Journey power ID {power_id} has an unknown v325 payload"
+                    "Journey power ID {power_id} has an unknown supported-format payload"
                 )))
             }
         }
@@ -465,6 +536,50 @@ fn read_journey_powers(
 }
 
 pub fn validate_document(
+    character: &CharacterDocument,
+    effects: &EffectsDocument,
+    journey: &JourneyDocument,
+    spawn_points: &[SpawnPoint],
+    inventory: &[ItemSlot],
+    equipment: &EquipmentDocument,
+    storage: &StorageDocument,
+) -> Result<(), SaveError> {
+    validate_document_version(
+        VERSION,
+        character,
+        effects,
+        journey,
+        spawn_points,
+        inventory,
+        equipment,
+        storage,
+    )
+}
+
+pub(super) fn validate_document_v317(
+    character: &CharacterDocument,
+    effects: &EffectsDocument,
+    journey: &JourneyDocument,
+    spawn_points: &[SpawnPoint],
+    inventory: &[ItemSlot],
+    equipment: &EquipmentDocument,
+    storage: &StorageDocument,
+) -> Result<(), SaveError> {
+    validate_document_version(
+        VERSION_317,
+        character,
+        effects,
+        journey,
+        spawn_points,
+        inventory,
+        equipment,
+        storage,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn validate_document_version(
+    version: i32,
     character: &CharacterDocument,
     effects: &EffectsDocument,
     journey: &JourneyDocument,
@@ -518,6 +633,17 @@ pub fn validate_document(
                 index + 1
             )));
         }
+        if version < 322
+            && loadout
+                .armor
+                .iter()
+                .chain(&loadout.dyes)
+                .any(|item| item.favorited)
+        {
+            return Err(SaveError::Validation(format!(
+                "player v{version} cannot store favorites on equipment or dye slots"
+            )));
+        }
     }
     validate_slots(
         &equipment.misc_equips,
@@ -567,6 +693,21 @@ pub(super) fn patch_document(
     data: &[u8],
     document: PatchDocument<'_>,
 ) -> Result<Vec<u8>, SaveError> {
+    patch_document_version(data, document, VERSION)
+}
+
+pub(super) fn patch_document_v317(
+    data: &[u8],
+    document: PatchDocument<'_>,
+) -> Result<Vec<u8>, SaveError> {
+    patch_document_version(data, document, VERSION_317)
+}
+
+fn patch_document_version(
+    data: &[u8],
+    document: PatchDocument<'_>,
+    expected_version: i32,
+) -> Result<Vec<u8>, SaveError> {
     let PatchDocument {
         character,
         effects,
@@ -576,7 +717,12 @@ pub(super) fn patch_document(
         equipment,
         storage,
     } = document;
-    validate_document(
+    let version = read_i32(data, 0)?;
+    if version != expected_version {
+        return Err(SaveError::UnsupportedVersion(version));
+    }
+    validate_document_version(
+        version,
         character,
         effects,
         journey,
@@ -631,8 +777,9 @@ pub(super) fn patch_document(
         if index != active_index {
             write_serialized_loadout(
                 &mut patched,
-                layout.loadouts + index * LOADOUT_SIZE,
+                layout.loadouts + index * layout.format.loadout_size(),
                 loadout,
+                layout.format,
             );
         }
     }
@@ -729,7 +876,7 @@ fn validate_character(character: &CharacterDocument) -> Result<(), SaveError> {
     let appearance = &character.appearance;
     if !(0..=227).contains(&appearance.hair) {
         return Err(SaveError::Validation(
-            "hair style must be between 0 and 227 for Terraria v325".into(),
+            "hair style must be between 0 and 227 for this Terraria player format".into(),
         ));
     }
     if appearance.team > 5 {
@@ -777,7 +924,7 @@ fn validate_effects(effects: &EffectsDocument) -> Result<(), SaveError> {
         }
         if !(0..=400).contains(&buff.buff_id) {
             return Err(SaveError::Validation(format!(
-                "saved effect slot {} has invalid buff ID {} for Terraria v325",
+                "saved effect slot {} has invalid buff ID {} for this Terraria player format",
                 index + 1,
                 buff.buff_id
             )));
@@ -801,7 +948,8 @@ fn validate_effects(effects: &EffectsDocument) -> Result<(), SaveError> {
 fn validate_spawn_points(points: &[SpawnPoint]) -> Result<(), SaveError> {
     if points.len() > 199 {
         return Err(SaveError::Validation(
-            "Terraria v325 supports at most 199 saved spawn points plus its terminator".into(),
+            "this Terraria player format supports at most 199 saved spawn points plus its terminator"
+                .into(),
         ));
     }
     for (index, point) in points.iter().enumerate() {
@@ -936,17 +1084,20 @@ fn write_character(
     data[base + 36] = u8::from(upgrades.unlocked_biome_torches);
     data[base + 37] = u8::from(upgrades.using_biome_torches);
     data[base + 38] = u8::from(upgrades.ate_artisan_bread);
-    data[base + 39] = 0;
-    data[base + 40] = u8::from(upgrades.used_aegis_crystal);
-    data[base + 41] = u8::from(upgrades.used_aegis_fruit);
-    data[base + 42] = u8::from(upgrades.used_arcane_crystal);
-    data[base + 43] = u8::from(upgrades.used_galaxy_pearl);
-    data[base + 44] = u8::from(upgrades.used_gummy_worm);
-    data[base + 45] = u8::from(upgrades.used_ambrosia);
-    data[base + 46] = u8::from(upgrades.downed_dd2_event);
-    data[base + 47..base + 51].copy_from_slice(&character.counters.tax_money.to_le_bytes());
-    data[base + 51..base + 55].copy_from_slice(&character.counters.pve_deaths.to_le_bytes());
-    data[base + 55..base + 59].copy_from_slice(&character.counters.pvp_deaths.to_le_bytes());
+    let post_bread_shift = layout.format.post_bread_shift();
+    data[base + 39 + post_bread_shift] = u8::from(upgrades.used_aegis_crystal);
+    data[base + 40 + post_bread_shift] = u8::from(upgrades.used_aegis_fruit);
+    data[base + 41 + post_bread_shift] = u8::from(upgrades.used_arcane_crystal);
+    data[base + 42 + post_bread_shift] = u8::from(upgrades.used_galaxy_pearl);
+    data[base + 43 + post_bread_shift] = u8::from(upgrades.used_gummy_worm);
+    data[base + 44 + post_bread_shift] = u8::from(upgrades.used_ambrosia);
+    data[base + 45 + post_bread_shift] = u8::from(upgrades.downed_dd2_event);
+    data[base + 46 + post_bread_shift..base + 50 + post_bread_shift]
+        .copy_from_slice(&character.counters.tax_money.to_le_bytes());
+    data[base + 50 + post_bread_shift..base + 54 + post_bread_shift]
+        .copy_from_slice(&character.counters.pve_deaths.to_le_bytes());
+    data[base + 54 + post_bread_shift..base + 58 + post_bread_shift]
+        .copy_from_slice(&character.counters.pvp_deaths.to_le_bytes());
 
     for (offset, color) in [
         character.appearance.hair_color,
@@ -960,7 +1111,7 @@ fn write_character(
     .into_iter()
     .enumerate()
     {
-        write_color(data, base + 59 + offset * 3, color);
+        write_color(data, base + 58 + post_bread_shift + offset * 3, color);
     }
     data[layout.voice_variant] = character.appearance.voice_variant;
     data[layout.voice_pitch..layout.voice_pitch + 4]
@@ -1020,13 +1171,11 @@ fn validate_slots(
 
 fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
     let version = read_i32(data, 0)?;
-    if version != VERSION {
-        return Err(SaveError::UnsupportedVersion(version));
-    }
+    let format = Format::from_version(version)?;
     let (_, name_end) = read_dotnet_string(data, METADATA_END)?;
-    let armor = name_end + HEADER_AFTER_NAME;
-    let dyes = armor + ARMOR_RECORDS * EQUIPMENT_RECORD_SIZE;
-    let inventory = dyes + DYE_RECORDS * EQUIPMENT_RECORD_SIZE;
+    let armor = name_end + format.header_after_name;
+    let dyes = armor + ARMOR_RECORDS * format.equipment_record_size;
+    let inventory = dyes + DYE_RECORDS * format.equipment_record_size;
     let misc = inventory + INVENTORY_RECORDS * INVENTORY_RECORD_SIZE;
     let bank1 = misc + MISC_RECORDS * COMPACT_ITEM_SIZE * 2;
     let bank2 = bank1 + BANK_RECORDS * BANK_RECORD_SIZE;
@@ -1049,9 +1198,9 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
         cursor = end;
     }
     if !found_spawn_end {
-        return Err(SaveError::Validation(
-            "spawn-point list has no v325 terminator".into(),
-        ));
+        return Err(SaveError::Validation(format!(
+            "spawn-point list has no v{version} terminator"
+        )));
     }
     let spawn_points_end = cursor;
 
@@ -1100,7 +1249,7 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
             14 => 4,
             _ => {
                 return Err(SaveError::Validation(format!(
-                    "Journey power ID {power_id} has an unknown v325 payload"
+                    "Journey power ID {power_id} has an unknown v{version} payload"
                 )))
             }
         };
@@ -1113,11 +1262,12 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
     let current_loadout_index = cursor;
     cursor = checked_advance(data, cursor, 4)?;
     let loadouts = cursor;
-    let voice_variant = checked_advance(data, loadouts, LOADOUT_RECORDS * LOADOUT_SIZE)?;
+    let voice_variant = checked_advance(data, loadouts, LOADOUT_RECORDS * format.loadout_size())?;
     let voice_pitch = checked_advance(data, voice_variant, 1)?;
     checked_advance(data, voice_pitch, 4)?;
 
     Ok(Layout {
+        format,
         name_end,
         armor,
         dyes,
@@ -1152,17 +1302,33 @@ fn read_active_loadout(data: &[u8], layout: Layout) -> Result<EquipmentLoadout, 
         })
         .collect();
     Ok(EquipmentLoadout {
-        armor: read_equipment_slots(data, layout.armor, ARMOR_RECORDS)?,
-        dyes: read_equipment_slots(data, layout.dyes, DYE_RECORDS)?,
+        armor: read_equipment_slots(data, layout.armor, ARMOR_RECORDS, layout.format)?,
+        dyes: read_equipment_slots(data, layout.dyes, DYE_RECORDS, layout.format)?,
         hidden,
     })
 }
 
-fn read_serialized_loadout(data: &[u8], base: usize) -> Result<EquipmentLoadout, SaveError> {
-    let armor = read_slots(data, base, ARMOR_RECORDS, INVENTORY_RECORD_SIZE, true)?;
-    let dye_base = base + ARMOR_RECORDS * INVENTORY_RECORD_SIZE;
-    let dyes = read_slots(data, dye_base, DYE_RECORDS, INVENTORY_RECORD_SIZE, true)?;
-    let hide_base = dye_base + DYE_RECORDS * INVENTORY_RECORD_SIZE;
+fn read_serialized_loadout(
+    data: &[u8],
+    base: usize,
+    format: Format,
+) -> Result<EquipmentLoadout, SaveError> {
+    let armor = read_slots(
+        data,
+        base,
+        ARMOR_RECORDS,
+        format.serialized_item_size,
+        format.equipment_favorites,
+    )?;
+    let dye_base = base + ARMOR_RECORDS * format.serialized_item_size;
+    let dyes = read_slots(
+        data,
+        dye_base,
+        DYE_RECORDS,
+        format.serialized_item_size,
+        format.equipment_favorites,
+    )?;
+    let hide_base = dye_base + DYE_RECORDS * format.serialized_item_size;
     let hidden = (0..DYE_RECORDS)
         .map(|index| read_u8(data, hide_base + index).map(|value| value != 0))
         .collect::<Result<Vec<_>, _>>()?;
@@ -1177,17 +1343,18 @@ fn read_equipment_slots(
     data: &[u8],
     base: usize,
     count: usize,
+    format: Format,
 ) -> Result<Vec<ItemSlot>, SaveError> {
     (0..count)
         .map(|slot| {
-            let offset = base + slot * EQUIPMENT_RECORD_SIZE;
+            let offset = base + slot * format.equipment_record_size;
             let item_id = read_i32(data, offset)?;
             Ok(ItemSlot {
                 slot: slot as u8,
                 item_id,
                 stack: i32::from(item_id != 0),
                 prefix: read_u8(data, offset + 4)?,
-                favorited: read_u8(data, offset + 5)? != 0,
+                favorited: format.equipment_favorites && read_u8(data, offset + 5)? != 0,
             })
         })
         .collect()
@@ -1227,12 +1394,12 @@ fn read_slots(
 
 fn write_active_loadout(data: &mut [u8], layout: Layout, loadout: &EquipmentLoadout) {
     for item in &loadout.armor {
-        let offset = layout.armor + item.slot as usize * EQUIPMENT_RECORD_SIZE;
-        write_equipment_item(data, offset, item);
+        let offset = layout.armor + item.slot as usize * layout.format.equipment_record_size;
+        write_equipment_item(data, offset, item, layout.format);
     }
     for item in &loadout.dyes {
-        let offset = layout.dyes + item.slot as usize * EQUIPMENT_RECORD_SIZE;
-        write_equipment_item(data, offset, item);
+        let offset = layout.dyes + item.slot as usize * layout.format.equipment_record_size;
+        write_equipment_item(data, offset, item, layout.format);
     }
     let mut first_flags = 0u8;
     let mut second_flags = data[layout.name_end + 16] & !0b11;
@@ -1249,20 +1416,39 @@ fn write_active_loadout(data: &mut [u8], layout: Layout, loadout: &EquipmentLoad
     data[layout.name_end + 16] = second_flags;
 }
 
-fn write_serialized_loadout(data: &mut [u8], base: usize, loadout: &EquipmentLoadout) {
-    write_slots(data, base, &loadout.armor, INVENTORY_RECORD_SIZE, true);
-    let dye_base = base + ARMOR_RECORDS * INVENTORY_RECORD_SIZE;
-    write_slots(data, dye_base, &loadout.dyes, INVENTORY_RECORD_SIZE, true);
-    let hide_base = dye_base + DYE_RECORDS * INVENTORY_RECORD_SIZE;
+fn write_serialized_loadout(
+    data: &mut [u8],
+    base: usize,
+    loadout: &EquipmentLoadout,
+    format: Format,
+) {
+    write_slots(
+        data,
+        base,
+        &loadout.armor,
+        format.serialized_item_size,
+        format.equipment_favorites,
+    );
+    let dye_base = base + ARMOR_RECORDS * format.serialized_item_size;
+    write_slots(
+        data,
+        dye_base,
+        &loadout.dyes,
+        format.serialized_item_size,
+        format.equipment_favorites,
+    );
+    let hide_base = dye_base + DYE_RECORDS * format.serialized_item_size;
     for (index, hidden) in loadout.hidden.iter().copied().enumerate() {
         data[hide_base + index] = u8::from(hidden);
     }
 }
 
-fn write_equipment_item(data: &mut [u8], offset: usize, item: &ItemSlot) {
+fn write_equipment_item(data: &mut [u8], offset: usize, item: &ItemSlot, format: Format) {
     data[offset..offset + 4].copy_from_slice(&item.item_id.to_le_bytes());
     data[offset + 4] = item.prefix;
-    data[offset + 5] = u8::from(item.favorited);
+    if format.equipment_favorites {
+        data[offset + 5] = u8::from(item.favorited);
+    }
 }
 
 fn write_compact_item(data: &mut [u8], offset: usize, item: &ItemSlot) {
@@ -1397,8 +1583,12 @@ mod tests {
     use super::*;
 
     fn synthetic_player(name: &str) -> Vec<u8> {
+        synthetic_player_for(name, Format::V325)
+    }
+
+    fn synthetic_player_for(name: &str, format: Format) -> Vec<u8> {
         let mut data = vec![0u8; 5000];
-        data[0..4].copy_from_slice(&VERSION.to_le_bytes());
+        data[0..4].copy_from_slice(&format.version.to_le_bytes());
         data[24] = name.len() as u8;
         data[25..25 + name.len()].copy_from_slice(name.as_bytes());
         let name_end = 25 + name.len();
@@ -1410,9 +1600,9 @@ mod tests {
         data[name_end + 31..name_end + 35].copy_from_slice(&200i32.to_le_bytes());
 
         let bank4 = name_end
-            + HEADER_AFTER_NAME
-            + ARMOR_RECORDS * EQUIPMENT_RECORD_SIZE
-            + DYE_RECORDS * EQUIPMENT_RECORD_SIZE
+            + format.header_after_name
+            + ARMOR_RECORDS * format.equipment_record_size
+            + DYE_RECORDS * format.equipment_record_size
             + INVENTORY_RECORDS * INVENTORY_RECORD_SIZE
             + MISC_RECORDS * COMPACT_ITEM_SIZE * 2
             + BANK_RECORDS * BANK_RECORD_SIZE * 3;
@@ -1422,6 +1612,75 @@ mod tests {
         let layout = locate_layout(&data).unwrap();
         data[layout.voice_variant] = 1;
         data
+    }
+
+    #[test]
+    fn v317_codec_uses_legacy_equipment_widths_and_round_trips_exactly() {
+        let data = synthetic_player_for("Dabruv", Format::V317);
+        let before = parse_v317(Path::new("fixture.plr"), "hash", &data).unwrap();
+        let unchanged = patch_document_v317(
+            &data,
+            PatchDocument {
+                character: &before.character,
+                effects: &before.effects,
+                journey: &before.journey,
+                spawn_points: &before.spawn_points,
+                inventory: &before.inventory,
+                equipment: &before.equipment,
+                storage: &before.storage,
+            },
+        )
+        .unwrap();
+        assert_eq!(unchanged, data);
+
+        let mut equipment = before.equipment.clone();
+        equipment.loadouts[0].armor[0] = ItemSlot {
+            slot: 0,
+            item_id: 90,
+            stack: 1,
+            prefix: 2,
+            favorited: false,
+        };
+        let patched = patch_document_v317(
+            &data,
+            PatchDocument {
+                character: &before.character,
+                effects: &before.effects,
+                journey: &before.journey,
+                spawn_points: &before.spawn_points,
+                inventory: &before.inventory,
+                equipment: &equipment,
+                storage: &before.storage,
+            },
+        )
+        .unwrap();
+        let after = parse_v317(Path::new("fixture.plr"), "hash", &patched).unwrap();
+        assert_eq!(after.equipment.loadouts[0].armor[0].item_id, 90);
+
+        let layout = locate_layout(&data).unwrap();
+        for index in 0..data.len() {
+            if data[index] != patched[index] {
+                assert!(
+                    (layout.armor..layout.armor + Format::V317.equipment_record_size)
+                        .contains(&index),
+                    "unexpected v317 mutation at byte {index}"
+                );
+            }
+        }
+
+        equipment.loadouts[0].armor[0].favorited = true;
+        assert!(validate_document_v317(
+            &before.character,
+            &before.effects,
+            &before.journey,
+            &before.spawn_points,
+            &before.inventory,
+            &equipment,
+            &before.storage,
+        )
+        .unwrap_err()
+        .to_string()
+        .contains("cannot store favorites"));
     }
 
     #[test]

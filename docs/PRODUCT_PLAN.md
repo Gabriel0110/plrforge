@@ -71,8 +71,12 @@ The codec, editing work, and optional local icon adapter are complete. The built
 - Journey research tracker, individual/bulk completion, all three per-player powers, and independent Super Cart flags.
 - Validation and serialization rules traced to the matching v325 game assembly, with unknown Journey power payloads rejected before writing.
 
-### Phase 4 — compatibility and release (next)
+### Phase 4 — compatibility and release (in progress)
 
+- A centralized codec registry now classifies v317 and v325 as verified, other historical versions as fixture-gated, and newer versions as unsupported without attempting a speculative parse.
+- The v317 codec accounts for the pre-v322 equipment records without favorite bytes and the pre-v324 character header, and passes the same complete mutation and byte-identical no-op suite as v325.
+- Player discovery and file opening expose the same supported/untested/unsupported decision, and unsupported files remain fail-closed with an actionable explanation.
+- The opt-in external v317/v325 fixture suite proves that a no-edit save reproduces the exact encrypted source bytes and preserves the exact backup bytes.
 - Golden fixtures for supported historical formats, beginning with 1.4.4 and 1.4.5.
 - Unsigned preview builds, then Apple notarization and Windows code signing.
 - Manual and opt-in GitHub Release discovery is implemented; signed download/install remains gated on a protected updater key and platform signing identities.

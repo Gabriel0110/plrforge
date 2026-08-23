@@ -1,7 +1,7 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
-import type { DiscoveredPlayer, PlayerDocument, SaveReceipt } from "../types";
+import type { DiscoveredPlayer, PlayerCompatibility, PlayerDocument, SaveReceipt } from "../types";
 
 declare global {
   interface Window {
@@ -99,6 +99,10 @@ export function discoverPlayers(): Promise<DiscoveredPlayer[]> {
 
 export function loadPlayer(path: string): Promise<PlayerDocument> {
   return invoke("load_player", { path });
+}
+
+export function inspectPlayer(path: string): Promise<PlayerCompatibility> {
+  return invoke("inspect_player", { path });
 }
 
 export function savePlayer(document: PlayerDocument): Promise<SaveReceipt> {

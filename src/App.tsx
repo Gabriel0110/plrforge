@@ -53,6 +53,7 @@ import {
   choosePlayerFile,
   discoverPlayers,
   isDesktop,
+  inspectPlayer,
   loadPlayer,
   openReleasePage,
   savePlayer,
@@ -116,19 +117,18 @@ function canStack(location: ItemLocation) {
   return location.area === "inventory" || location.area === "storage";
 }
 
-function canFavorite(location: ItemLocation) {
+function canFavorite(location: ItemLocation, version: number) {
   return location.area === "inventory"
-    || location.area === "loadoutArmor"
-    || location.area === "loadoutDye"
+    || (version >= 322 && (location.area === "loadoutArmor" || location.area === "loadoutDye"))
     || (location.area === "storage" && location.storage === "voidVault");
 }
 
-function normalizedFor(item: InventoryItem, location: ItemLocation): InventoryItem {
+function normalizedFor(item: InventoryItem, location: ItemLocation, version: number): InventoryItem {
   return {
     ...item,
     slot: location.slot,
     stack: item.itemId === 0 ? 0 : canStack(location) ? Math.max(1, item.stack) : 1,
-    favorited: canFavorite(location) ? item.favorited : false,
+    favorited: canFavorite(location, version) ? item.favorited : false,
   };
 }
 
@@ -215,12 +215,19 @@ export default function App() {
 
   const editorDocument = useMemo<EditableDocument>(() => editableDocument(editor), [editor]);
   const currentPlayer = player ? { ...player, ...editorDocument } : null;
+  const activeVersion = currentPlayer?.version ?? 325;
   const selectedItem = itemAt(editorDocument, selected);
 
   const loadPath = useCallback(async (path: string) => {
     setLoadState("loading");
     setError(null);
     try {
+      const compatibility = await inspectPlayer(path);
+      if (!compatibility.canEdit) {
+        setLoadState("error");
+        setError(compatibility.message);
+        return;
+      }
       const document = await loadPlayer(path);
       setPlayer(document);
       dispatch({ type: "reset", document: editableDocument(document) });
@@ -339,7 +346,7 @@ export default function App() {
       return;
     }
     const previous = selectedItem;
-    const replacement = normalizedFor({ ...previous, itemId: item.id, stack: 1, prefix: 0, favorited: false }, selected);
+    const replacement = normalizedFor({ ...previous, itemId: item.id, stack: 1, prefix: 0, favorited: false }, selected, activeVersion);
     const next = replaceItemAt(editorDocument, selected, replacement);
     applyChange(next, previous.itemId === 0 ? `${item.name} added` : `${itemName(previous.itemId)} replaced with ${item.name}`, selected);
     setQuery("");
@@ -347,7 +354,7 @@ export default function App() {
   };
 
   const patchSelected = (patch: Partial<InventoryItem>, description: string) => {
-    const next = replaceItemAt(editorDocument, selected, normalizedFor({ ...selectedItem, ...patch }, selected));
+    const next = replaceItemAt(editorDocument, selected, normalizedFor({ ...selectedItem, ...patch }, selected, activeVersion));
     applyChange(next, `${itemName(selectedItem.itemId)}: ${description}`, selected);
   };
 
@@ -371,9 +378,9 @@ export default function App() {
       setError(`${itemName(selectedItem.itemId)} cannot be swapped into ${locationLabel(clipboard.source)}.`);
       return;
     }
-    let next = replaceItemAt(editorDocument, selected, normalizedFor(clipboard.item, selected));
+    let next = replaceItemAt(editorDocument, selected, normalizedFor(clipboard.item, selected, activeVersion));
     if (clipboard.mode === "move") {
-      next = replaceItemAt(next, clipboard.source, normalizedFor(selectedItem, clipboard.source));
+      next = replaceItemAt(next, clipboard.source, normalizedFor(selectedItem, clipboard.source, activeVersion));
     }
     applyChange(next, `${itemName(clipboard.item.itemId)} ${clipboard.mode === "move" ? "moved" : "copied"}`, selected);
     if (clipboard.mode === "move") setClipboard(null);
@@ -447,7 +454,7 @@ export default function App() {
         />
       )}
 
-      {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} onOpen={openPlayer} onLoad={loadPath} /> : loadState === "error" ? <main className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : (
+      {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "error" ? <main className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} onOpen={openPlayer} onLoad={loadPath} /> : (
         <div className="grid min-h-0 flex-1 grid-cols-[208px_minmax(0,1fr)]">
           <SideRail view={view} onView={navigate} />
           <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
@@ -461,7 +468,7 @@ export default function App() {
                     {view === "storage" && <StoragePanel storage={editor.storage} container={storageKey} selected={selected} onContainer={(container) => { setStorageKey(container); setSelected({ area: "storage", storage: container, slot: 0 }); }} onSelect={setSelected} />}
                   </div>
                 </main>
-                <ItemInspector item={selectedItem} slotLabel={targetLabel} canStack={canStack(selected)} canFavorite={canFavorite(selected)} onPatch={patchSelected} onRemove={removeSelected} onCopy={() => setClipboard({ item: selectedItem, source: selected, mode: "copy" })} onMove={() => setClipboard({ item: selectedItem, source: selected, mode: "move" })} onPaste={paste} pasteLabel={clipboard && !sameLocation(clipboard.source, selected) ? itemName(clipboard.item.itemId) : null} />
+                <ItemInspector item={selectedItem} slotLabel={targetLabel} canStack={canStack(selected)} canFavorite={canFavorite(selected, activeVersion)} onPatch={patchSelected} onRemove={removeSelected} onCopy={() => setClipboard({ item: selectedItem, source: selected, mode: "copy" })} onMove={() => setClipboard({ item: selectedItem, source: selected, mode: "move" })} onPaste={paste} pasteLabel={clipboard && !sameLocation(clipboard.source, selected) ? itemName(clipboard.item.itemId) : null} />
               </div>
             ) : view === "overview" ? <CharacterPanel character={editor.character} onChange={applyCharacterChange} />
               : view === "effects" ? <EffectsPanel effects={editor.effects} onChange={(effects, description, location) => applySystemChange({ effects }, description, location)} />
