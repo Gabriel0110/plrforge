@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { EmptyState } from "./components/EmptyState";
+import { BackupsPanel } from "./components/BackupsPanel";
 import { CharacterPanel } from "./components/CharacterPanel";
 import { EffectsPanel } from "./components/EffectsPanel";
 import { InventoryGrid } from "./components/InventoryGrid";
@@ -29,6 +30,7 @@ import { LoadoutsPanel } from "./components/LoadoutsPanel";
 import { LoadingState } from "./components/LoadingState";
 import { StoragePanel } from "./components/StoragePanel";
 import { SpawnPointsPanel } from "./components/SpawnPointsPanel";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { acceptsItem, findItem, itemName } from "./data/catalog";
 import { demoPlayer } from "./lib/demo";
 import {
@@ -43,7 +45,17 @@ import {
   replaceVisibilityAt,
   type EditableDocument,
 } from "./lib/editor";
-import { choosePlayerFile, discoverPlayers, isDesktop, loadPlayer, savePlayer } from "./lib/native";
+import {
+  appVersion,
+  checkForUpdates,
+  choosePlayerFile,
+  discoverPlayers,
+  isDesktop,
+  loadPlayer,
+  savePlayer,
+  type RestoreReceipt,
+  type UpdateStatus,
+} from "./lib/native";
 import { useGameAssets } from "./lib/assets";
 import type {
   CatalogItem,
@@ -54,7 +66,7 @@ import type {
   StorageKey,
 } from "./types";
 
-type View = "overview" | "loadouts" | "inventory" | "storage" | "effects" | "journey" | "spawns";
+type View = "overview" | "loadouts" | "inventory" | "storage" | "effects" | "journey" | "spawns" | "backups" | "settings";
 type LoadState = "discovering" | "empty" | "loading" | "ready" | "error";
 type ClipboardState = { item: InventoryItem; source: ItemLocation; mode: "copy" | "move" };
 type WorkspaceState = {
@@ -123,6 +135,14 @@ function itemFits(location: ItemLocation, item: InventoryItem) {
 }
 
 function SideRail({ view, onView }: { view: View; onView: (view: View) => void }) {
+  const utilityButton = (id: View, label: string, Icon: typeof ClockCounterClockwise) => {
+    const active = view === id;
+    return (
+      <button type="button" onClick={() => onView(id)} className={`group flex w-full items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-left text-[12px] active:scale-[0.98] ${active ? "border-emerald-400 bg-white/[0.075] font-medium text-white" : "border-transparent bg-transparent text-white/42 hover:bg-white/[0.04] hover:text-white/70"}`}>
+        <Icon weight={active ? "fill" : "regular"} className={`size-[17px] ${active ? "text-emerald-300" : "text-white/34 group-hover:text-white/60"}`} />{label}
+      </button>
+    );
+  };
   return (
     <nav aria-label="Character sections" className="flex min-h-0 flex-col border-r border-white/[0.08] bg-[#111513]/78 p-3">
       <div className="space-y-1">
@@ -130,7 +150,7 @@ function SideRail({ view, onView }: { view: View; onView: (view: View) => void }
           const Icon = item.icon;
           const active = view === item.id;
           return (
-            <button type="button" key={item.id} onClick={() => onView(item.id)} className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[12px] font-medium transition active:scale-[0.98] ${active ? "bg-white/[0.075] text-white shadow-[inset_2px_0_0_#52b788]" : "text-white/48 hover:bg-white/[0.04] hover:text-white/76"}`}>
+            <button type="button" key={item.id} onClick={() => onView(item.id)} className={`group flex w-full items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-left text-[12px] font-medium active:scale-[0.98] ${active ? "border-emerald-400 bg-white/[0.075] text-white" : "border-transparent bg-transparent text-white/48 hover:bg-white/[0.04] hover:text-white/76"}`}>
               <Icon weight={active ? "fill" : "regular"} className={`size-[17px] ${active ? "text-emerald-300" : "text-white/34 group-hover:text-white/60"}`} />
               <span className="flex-1">{item.label}</span>
               {item.phase && <span className="font-mono text-[8px] uppercase tracking-[0.08em] text-white/22">{item.phase}</span>}
@@ -139,8 +159,8 @@ function SideRail({ view, onView }: { view: View; onView: (view: View) => void }
         })}
       </div>
       <div className="mt-auto space-y-1 border-t border-white/[0.08] pt-3">
-        <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[12px] text-white/42 transition hover:bg-white/[0.04] hover:text-white/70"><ClockCounterClockwise className="size-[17px]" />Backups</button>
-        <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[12px] text-white/42 transition hover:bg-white/[0.04] hover:text-white/70"><GearSix className="size-[17px]" />Settings</button>
+        {utilityButton("backups", "Backups", ClockCounterClockwise)}
+        {utilityButton("settings", "Settings", GearSix)}
       </div>
     </nav>
   );
@@ -183,6 +203,10 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(desktop ? null : "Browser preview uses a disposable demo character.");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [version, setVersion] = useState("0.1.0");
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [automaticUpdateChecks, setAutomaticUpdateChecks] = useState(() => localStorage.getItem("plrforge.autoUpdateChecks") === "true");
   const [editor, dispatch] = useReducer(editorReducer, editableDocument(player ?? demoPlayer), initialEditorState);
 
   const editorDocument = useMemo<EditableDocument>(() => editableDocument(editor), [editor]);
@@ -213,6 +237,34 @@ export default function App() {
     if (!desktop) return;
     discoverPlayers().then((found) => { setPlayers(found); setLoadState("empty"); }).catch((reason) => { setError(reason instanceof Error ? reason.message : String(reason)); setLoadState("empty"); });
   }, [desktop]);
+
+  useEffect(() => {
+    void appVersion().then(setVersion).catch(() => undefined);
+  }, []);
+
+  const runUpdateCheck = useCallback(async () => {
+    setCheckingUpdates(true);
+    try {
+      setUpdateStatus(await checkForUpdates());
+    } catch (reason) {
+      const currentVersion = await appVersion().catch(() => "unknown");
+      setUpdateStatus({
+        state: "error",
+        currentVersion,
+        latestVersion: null,
+        releaseName: null,
+        releaseUrl: null,
+        publishedAt: null,
+        message: reason instanceof Error ? reason.message : String(reason),
+      });
+    } finally {
+      setCheckingUpdates(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (desktop && automaticUpdateChecks) void runUpdateCheck();
+  }, [automaticUpdateChecks, desktop, runUpdateCheck]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -255,6 +307,11 @@ export default function App() {
     if (next === "inventory") setSelected({ area: "inventory", slot: 0 });
     if (next === "loadouts") setSelected({ area: "loadoutArmor", loadout: loadoutIndex, slot: 0 });
     if (next === "storage") setSelected({ area: "storage", storage: storageKey, slot: 0 });
+  };
+
+  const changeAutomaticUpdateChecks = (enabled: boolean) => {
+    localStorage.setItem("plrforge.autoUpdateChecks", String(enabled));
+    setAutomaticUpdateChecks(enabled);
   };
 
   const chooseItem = (item: CatalogItem) => {
@@ -342,6 +399,16 @@ export default function App() {
     }
   };
 
+  const restored = async (receipt: RestoreReceipt) => {
+    if (!currentPlayer) return;
+    const reloaded = await loadPlayer(currentPlayer.path);
+    setPlayer(reloaded);
+    dispatch({ type: "reset", document: editableDocument(reloaded) });
+    setLoadoutIndex(reloaded.equipment.currentLoadoutIndex);
+    setClipboard(null);
+    setMessage(`Backup restored and verified. Previous file preserved at ${receipt.safetyBackupPath}`);
+  };
+
   const targetLabel = locationLabel(selected);
   const isItemView = view === "inventory" || view === "loadouts" || view === "storage";
 
@@ -371,7 +438,9 @@ export default function App() {
             ) : view === "overview" ? <CharacterPanel character={editor.character} onChange={applyCharacterChange} />
               : view === "effects" ? <EffectsPanel effects={editor.effects} onChange={(effects, description, location) => applySystemChange({ effects }, description, location)} />
               : view === "journey" ? <JourneyPanel journey={editor.journey} difficulty={editor.character.difficulty} onChange={(journey, description, location) => applySystemChange({ journey }, description, location)} />
-              : <SpawnPointsPanel points={editor.spawnPoints} onChange={(spawnPoints, description, location) => applySystemChange({ spawnPoints }, description, location)} />}
+              : view === "spawns" ? <SpawnPointsPanel points={editor.spawnPoints} onChange={(spawnPoints, description, location) => applySystemChange({ spawnPoints }, description, location)} />
+              : view === "backups" ? <BackupsPanel playerPath={currentPlayer.path} playerName={currentPlayer.character.name} refreshKey={currentPlayer.sourceHash} hasUnsavedChanges={editor.changes.length > 0} onRestored={restored} />
+              : <SettingsPanel version={version} updateStatus={updateStatus} checkingUpdates={checkingUpdates} automaticUpdateChecks={automaticUpdateChecks} onAutomaticUpdateChecks={changeAutomaticUpdateChecks} onCheckForUpdates={runUpdateCheck} />}
 
             <footer className="border-t border-white/[0.08] bg-[#111513]">
               {(error || message || clipboard) && <div className={`flex items-start gap-2 border-b border-white/[0.06] px-4 py-2 text-[11px] ${error ? "text-rose-300/84" : "text-white/42"}`}>{error ? <Warning className="mt-px size-3.5 shrink-0" /> : <Check className="mt-px size-3.5 shrink-0 text-emerald-300/70" />}<span className="truncate">{error ?? (clipboard ? `${clipboard.mode === "move" ? "Moving" : "Copied"} ${itemName(clipboard.item.itemId)} from ${locationLabel(clipboard.source)}. Select a destination and paste.` : message)}</span></div>}

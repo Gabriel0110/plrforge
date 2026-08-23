@@ -28,6 +28,16 @@ The version registry rejects anything other than 325 today. Each future codec mu
 - patch or serialize deterministically;
 - verify the produced payload by parsing it again.
 
+## Backup recovery
+
+Backups live in a sibling `.plrforge-backups` directory. The native layer filters entries by the active player's exact file stem, decrypts and parses every listed file, and marks damaged or unsupported files unavailable. Both reveal and restore canonicalize the requested path and reject files outside that directory or belonging to a different character. Restore validates the selected backup, copies the current player to a millisecond-stamped `pre-restore` backup, verifies a staged copy, and only then replaces the player file. The editor reloads the restored document so its source hash and undo history cannot remain stale.
+
+## Release discovery
+
+Release discovery is notification-only. `PLRFORGE_GITHUB_REPOSITORY` is validated and embedded at compile time; official CI builds source it from GitHub's own `${{ github.repository }}` context. The native command calls GitHub's public latest-release endpoint over TLS, parses a SemVer tag, and constructs a release URL only under that configured repository. Opening arbitrary URLs is rejected. Automatic launch checks are an opt-in local browser preference.
+
+The Tauri updater plugin is not enabled yet. Its installer flow requires a long-lived public/private updater key pair and signed update artifacts, in addition to platform code signing. Until those release identities are established, opening the human-readable GitHub Release is safer than implementing an unsigned or home-grown installer.
+
 ## Item data
 
 Search metadata and save compatibility are separate concerns. Unknown but valid numeric IDs remain editable even when the friendly-name catalog lags a Terraria release. Bundled search data is replaceable; game assets are never required to open or save a character.
@@ -44,8 +54,8 @@ Animated item sheets are cropped by Terraria v325's exact registered frame rules
 
 - Rust unit tests cover 7-bit strings, variable-length Unicode names, dynamic v325 offsets, character validation, all character-field round trips, active/inactive loadout mapping, equipment stack validation, buff/spawn/research/Journey mutation, encryption and zero-padding round trips, untouched-tail assertions after multiple variable-length splices, strict XNB texture parsing, LZX decoding against locally installed real assets when available, animation-frame cropping, and Steam library-path parsing.
 - Golden fixtures should be synthetic or explicitly user-approved and must never contain personal player files in source control.
-- React tests cover the Character, Effects, Journey, and Spawn Points workspaces, item search, slot replacement, validation, shared undo/redo, loading, empty, and error states.
-- Native smoke tests load a copied fixture, change character, item, buff, spawn, research, Journey-power, and Super Cart regions, save it, re-open it, and compare the complete normalized models.
+- React tests cover the Character, Effects, Journey, Spawn Points, Backups, and Settings workspaces, item search, slot replacement, validation, restore confirmation, shared undo/redo, loading, empty, and error states.
+- Native smoke tests load a copied fixture, change character, item, buff, spawn, research, Journey-power, and Super Cart regions, save it, re-open it, compare the complete normalized models, list the verified backup, restore it, and verify the pre-restore safety copy.
 
 ## Update response
 

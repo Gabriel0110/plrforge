@@ -42,6 +42,20 @@ PlrForge never mutates a loaded file in memory without tracking the change. Befo
 
 Do not edit a character while Terraria is running. Steam Cloud can otherwise race the local save.
 
+The **Backups** workspace lists only the active character's verified backups. Restoring is disabled while the editor has unsaved changes, requires a second confirmation, and preserves the current `.plr` as a new `pre-restore` backup before replacement. **Reveal** opens the containing folder without exposing arbitrary paths to the webview.
+
+## Release checks
+
+The **Settings** workspace contains a manual **Check now** action and an opt-in “check automatically on launch” preference. Official GitHub Actions builds compile their source repository into the app via `PLRFORGE_GITHUB_REPOSITORY=${{ github.repository }}`. The app asks GitHub's public `releases/latest` endpoint for metadata, compares semantic versions, and can open the matching release page. It does not download or install code. Local builds without a configured repository report that update checks are unavailable instead of guessing a feed.
+
+To configure a local or third-party build:
+
+```sh
+PLRFORGE_GITHUB_REPOSITORY=owner/repository npm run desktop:build
+```
+
+Published release tags must be semantic versions such as `v0.2.0`, and the versions in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` must agree. A signed in-app installer is intentionally deferred until the project has permanent macOS/Windows signing identities and a protected Tauri updater key.
+
 ## Data and licensing
 
 The searchable item and buff metadata is distributed under the Microsoft Public License and derived in part from the TEdit project. See `THIRD_PARTY_MS-PL.txt`. PlrForge does not bundle, download, or hotlink Terraria sprites or other game assets. Its optional asset adapter creates a disposable local cache from the user's own installed copy. Terraria and its artwork are owned by Re-Logic.

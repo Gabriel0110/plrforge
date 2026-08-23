@@ -14,6 +14,8 @@
 - Confirm animated items show one inventory frame and item/buff icons render through the packaged asset protocol.
 - `npx -y react-doctor@latest . --verbose --scope changed`
 - Confirm the backup opens and the original source hash changes only after save.
+- Verify backup listing, Reveal, unsaved-change lockout, restore confirmation, restored-file reload, and the new pre-restore safety copy.
+- Verify manual release checking, opt-in launch checking, no-release/error states, and that release links cannot leave the configured GitHub repository.
 - Verify 1280×720, 1440×900, and Windows high-DPI layouts.
 
 ## macOS
@@ -33,8 +35,19 @@
 
 ## Public release
 
+- Keep `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` on the same SemVer and tag it as `v<version>`.
+- Build distributed binaries with `PLRFORGE_GITHUB_REPOSITORY=owner/repository`; the GitHub Actions build does this from `${{ github.repository }}`.
+- Publish a non-draft, non-prerelease GitHub Release so the stable update check can discover it.
+- Run the **Release draft** workflow to create the `v<version>` draft and attach universal macOS plus Windows artifacts; review its notes and assets before publishing it.
 - Publish SHA-256 checksums and a compatibility matrix.
 - Link recovery instructions prominently.
 - Credit TEdit item metadata under MS-PL.
 - State that Terraria and its assets are owned by Re-Logic and are not distributed.
 - Never claim affiliation with Terrasavr, TEdit, or Re-Logic.
+
+## Signed installer updates (after signing setup)
+
+- Generate the permanent Tauri updater key once, store the private key and password only as protected repository secrets, and commit only the public key.
+- Enable updater artifacts and the official Tauri updater plugin only after macOS notarization and Windows signing work in CI.
+- Publish and verify `latest.json`, platform artifacts, and `.sig` files from a private test release before enabling installation for users.
+- Never replace Tauri signature verification with a custom download/install path.

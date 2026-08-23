@@ -20,10 +20,13 @@ dirs = "6"
 hex = "0.4"
 lzxd = "0.2.7"
 png = "0.18"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+semver = "1"
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
 thiserror = "2"
 
 [dev-dependencies]

@@ -65,6 +65,26 @@ pub struct SaveReceipt {
     pub saved_at: String,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupEntry {
+    pub path: String,
+    pub file_name: String,
+    pub size: u64,
+    pub modified_at: String,
+    pub character_name: Option<String>,
+    pub version: Option<i32>,
+    pub compatible: bool,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RestoreReceipt {
+    pub safety_backup_path: String,
+    pub restored_at: String,
+}
+
 pub fn discover_players() -> Result<Vec<DiscoveredPlayer>, SaveError> {
     let mut roots = Vec::new();
     if cfg!(target_os = "macos") {
@@ -153,18 +173,7 @@ pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError>
     )?;
     let staged_encrypted = crypto::encrypt(&patched)?;
 
-    let backup_dir = path
-        .parent()
-        .unwrap_or_else(|| Path::new("."))
-        .join(".plrforge-backups");
-    fs::create_dir_all(&backup_dir)?;
-    let stem = path
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .unwrap_or("player");
-    let timestamp = Utc::now().format("%Y%m%dT%H%M%SZ");
-    let backup_path = backup_dir.join(format!("{stem}-{timestamp}.plr"));
-    fs::copy(&path, &backup_path)?;
+    let backup_path = create_backup_copy(&path, None)?;
 
     let stage_path = staged_path(&path);
     fs::write(&stage_path, &staged_encrypted)?;
@@ -201,6 +210,130 @@ pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError>
         source_hash: hash(&saved_bytes),
         saved_at: Utc::now().to_rfc3339(),
     })
+}
+
+pub fn list_backups(player_path: &str) -> Result<Vec<BackupEntry>, SaveError> {
+    let player = checked_path(player_path)?;
+    let directory = backup_dir_for(&player);
+    let Ok(entries) = fs::read_dir(directory) else {
+        return Ok(Vec::new());
+    };
+    let stem = player
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("player");
+    let prefix = format!("{stem}-");
+    let mut backups = entries
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            let file_name = path.file_name()?.to_str()?.to_owned();
+            if path.extension().and_then(|value| value.to_str()) != Some("plr")
+                || !file_name.starts_with(&prefix)
+            {
+                return None;
+            }
+            let metadata = entry.metadata().ok()?;
+            let modified = metadata.modified().ok();
+            let modified_at = modified
+                .map(chrono::DateTime::<Utc>::from)
+                .map_or_else(String::new, |value| value.to_rfc3339());
+            let loaded = load_path(&path);
+            let (character_name, version, compatible, detail) = match loaded {
+                Ok(document) => (
+                    Some(document.character.name),
+                    Some(document.version),
+                    true,
+                    "Verified Terraria v325 backup".into(),
+                ),
+                Err(error) => (None, None, false, error.to_string()),
+            };
+            Some(BackupEntry {
+                path: path.to_string_lossy().into_owned(),
+                file_name,
+                size: metadata.len(),
+                modified_at,
+                character_name,
+                version,
+                compatible,
+                detail,
+            })
+        })
+        .collect::<Vec<_>>();
+    backups.sort_by(|left, right| right.modified_at.cmp(&left.modified_at));
+    Ok(backups)
+}
+
+pub fn restore_backup(player_path: &str, backup_path: &str) -> Result<RestoreReceipt, SaveError> {
+    let player = checked_path(player_path)?;
+    let backup = checked_backup_path_for(&player, backup_path)?;
+    let encrypted = fs::read(&backup)?;
+    let plaintext = crypto::decrypt(&encrypted)?;
+    v325::parse(&backup, &hash(&encrypted), &plaintext)?;
+
+    let safety_backup = create_backup_copy(&player, Some("pre-restore"))?;
+    let stage = staged_path(&player);
+    fs::write(&stage, &encrypted)?;
+    let verification = (|| {
+        let staged_bytes = fs::read(&stage)?;
+        let staged_plaintext = crypto::decrypt(&staged_bytes)?;
+        v325::parse(&stage, &hash(&staged_bytes), &staged_plaintext)?;
+        Ok::<(), SaveError>(())
+    })();
+    if let Err(error) = verification {
+        let _ = fs::remove_file(&stage);
+        return Err(error);
+    }
+    replace_file(&stage, &player)?;
+
+    Ok(RestoreReceipt {
+        safety_backup_path: safety_backup.to_string_lossy().into_owned(),
+        restored_at: Utc::now().to_rfc3339(),
+    })
+}
+
+pub fn checked_backup_path(player_path: &str, backup_path: &str) -> Result<PathBuf, SaveError> {
+    checked_backup_path_for(&checked_path(player_path)?, backup_path)
+}
+
+fn checked_backup_path_for(player: &Path, backup_path: &str) -> Result<PathBuf, SaveError> {
+    let backup = checked_path(backup_path)?;
+    let directory = backup_dir_for(player);
+    let canonical_directory = directory.canonicalize()?;
+    let canonical_backup = backup.canonicalize()?;
+    let stem = player
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("player");
+    let expected_prefix = format!("{stem}-");
+    let valid_name = canonical_backup
+        .file_name()
+        .and_then(|value| value.to_str())
+        .is_some_and(|name| name.starts_with(&expected_prefix) && name.ends_with(".plr"));
+    if canonical_backup.parent() != Some(canonical_directory.as_path()) || !valid_name {
+        return Err(SaveError::InvalidPath(backup_path.into()));
+    }
+    Ok(canonical_backup)
+}
+
+fn backup_dir_for(path: &Path) -> PathBuf {
+    path.parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(".plrforge-backups")
+}
+
+fn create_backup_copy(path: &Path, label: Option<&str>) -> Result<PathBuf, SaveError> {
+    let backup_dir = backup_dir_for(path);
+    fs::create_dir_all(&backup_dir)?;
+    let stem = path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("player");
+    let timestamp = Utc::now().format("%Y%m%dT%H%M%S%.3fZ");
+    let label = label.map_or_else(String::new, |value| format!("-{value}"));
+    let backup_path = backup_dir.join(format!("{stem}{label}-{timestamp}.plr"));
+    fs::copy(path, &backup_path)?;
+    Ok(backup_path)
 }
 
 fn checked_path(value: &str) -> Result<PathBuf, SaveError> {
@@ -246,6 +379,25 @@ mod integration_tests {
     use super::*;
 
     #[test]
+    fn backup_paths_cannot_escape_the_active_players_history() {
+        let temporary = tempfile::tempdir().unwrap();
+        let player = temporary.path().join("Hero.plr");
+        fs::write(&player, b"player").unwrap();
+        let backup_directory = backup_dir_for(&player);
+        fs::create_dir_all(&backup_directory).unwrap();
+        let valid = backup_directory.join("Hero-20260823.plr");
+        let wrong_player = backup_directory.join("SomeoneElse-20260823.plr");
+        let outside = temporary.path().join("Hero-outside.plr");
+        fs::write(&valid, b"backup").unwrap();
+        fs::write(&wrong_player, b"backup").unwrap();
+        fs::write(&outside, b"backup").unwrap();
+
+        assert!(checked_backup_path_for(&player, &valid.to_string_lossy()).is_ok());
+        assert!(checked_backup_path_for(&player, &wrong_player.to_string_lossy()).is_err());
+        assert!(checked_backup_path_for(&player, &outside.to_string_lossy()).is_err());
+    }
+
+    #[test]
     fn external_fixture_completes_guarded_noop_save_when_configured() {
         let Ok(source) = std::env::var("PLRFORGE_FIXTURE") else {
             return;
@@ -279,6 +431,45 @@ mod integration_tests {
             "verified {} v{} across character, item, effect, Journey, and spawn records; backup created",
             after.character.name, after.version
         );
+    }
+
+    #[test]
+    fn external_fixture_lists_and_restores_a_verified_backup_when_configured() {
+        let Ok(source) = std::env::var("PLRFORGE_FIXTURE") else {
+            return;
+        };
+        let temporary = tempfile::tempdir().unwrap();
+        let copy = temporary.path().join("restore-fixture.plr");
+        fs::copy(source, &copy).unwrap();
+
+        let original = load_path(&copy).unwrap();
+        let mut edited = original.clone();
+        edited.character.name = "RestoreTest".into();
+        save_player(SavePlayerRequest {
+            path: copy.to_string_lossy().into_owned(),
+            source_hash: edited.source_hash.clone(),
+            character: edited.character,
+            effects: edited.effects,
+            journey: edited.journey,
+            spawn_points: edited.spawn_points,
+            inventory: edited.inventory,
+            equipment: edited.equipment,
+            storage: edited.storage,
+        })
+        .unwrap();
+
+        let backups = list_backups(&copy.to_string_lossy()).unwrap();
+        assert_eq!(backups.len(), 1);
+        assert!(backups[0].compatible);
+        assert_eq!(
+            backups[0].character_name.as_deref(),
+            Some(original.character.name.as_str())
+        );
+
+        let receipt = restore_backup(&copy.to_string_lossy(), &backups[0].path).unwrap();
+        assert!(Path::new(&receipt.safety_backup_path).exists());
+        assert_eq!(load_path(&copy).unwrap().character, original.character);
+        assert_eq!(list_backups(&copy.to_string_lossy()).unwrap().len(), 2);
     }
 
     #[test]

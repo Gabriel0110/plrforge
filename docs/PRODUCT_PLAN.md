@@ -19,6 +19,8 @@ The application optimizes for three jobs:
 - **Effects:** saved buffs and durations.
 - **Journey:** researched items and quantities, plus journey-only player powers when serialized in the player file.
 - **Spawn points:** named bed spawn records.
+- **Backups:** verified per-character history, reveal, guarded restore, and pre-restore safety copies.
+- **Settings:** local game-art source and manual/opt-in GitHub Release checks.
 - **Change ledger:** undo, redo, before/after inspection, and save transaction result.
 
 Global command search finds both actions and items. An item can be added to the first compatible empty slot or assigned to an explicit slot. Equipment slots reject incompatible item categories once the local catalog adapter can resolve item capabilities.
@@ -73,6 +75,7 @@ The codec, editing work, and optional local icon adapter are complete. The built
 
 - Golden fixtures for supported historical formats, beginning with 1.4.4 and 1.4.5.
 - Unsigned preview builds, then Apple notarization and Windows code signing.
+- Manual and opt-in GitHub Release discovery is implemented; signed download/install remains gated on a protected updater key and platform signing identities.
 - Signed update manifest, crash-safe diagnostics, localization, accessibility pass, and stable 1.0.
 
 ## Definition of done for 1.0

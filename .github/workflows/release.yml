@@ -1,28 +1,13 @@
-name: Build
+name: Release draft
 
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - uses: dtolnay/rust-toolchain@stable
-      - run: npm ci
-      - run: npm run build
-      - run: npm run test
-      - run: cargo test --manifest-path src-tauri/Cargo.toml
+permissions:
+  contents: write
 
-  desktop:
-    needs: test
+jobs:
+  publish:
     strategy:
       fail-fast: false
       matrix:
@@ -47,4 +32,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLRFORGE_GITHUB_REPOSITORY: ${{ github.repository }}
         with:
+          tagName: v__VERSION__
+          releaseName: PlrForge v__VERSION__
+          releaseBody: Download the artifact for your platform. See the repository release notes and compatibility matrix before editing a character.
+          releaseDraft: true
+          prerelease: false
           args: ${{ matrix.args }}

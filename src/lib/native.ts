@@ -1,4 +1,5 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
 import type { DiscoveredPlayer, PlayerDocument, SaveReceipt } from "../types";
 
@@ -16,6 +17,32 @@ export type GameAssetStatus = {
   cachePath: string | null;
   itemCount: number;
   buffCount: number;
+  message: string;
+};
+
+export type BackupEntry = {
+  path: string;
+  fileName: string;
+  size: number;
+  modifiedAt: string;
+  characterName: string | null;
+  version: number | null;
+  compatible: boolean;
+  detail: string;
+};
+
+export type RestoreReceipt = {
+  safetyBackupPath: string;
+  restoredAt: string;
+};
+
+export type UpdateStatus = {
+  state: "updateAvailable" | "upToDate" | "unconfigured" | "error" | "preview";
+  currentVersion: string;
+  latestVersion: string | null;
+  releaseName: string | null;
+  releaseUrl: string | null;
+  publishedAt: string | null;
   message: string;
 };
 
@@ -88,4 +115,46 @@ export function savePlayer(document: PlayerDocument): Promise<SaveReceipt> {
       storage: document.storage,
     },
   });
+}
+
+export function listBackups(playerPath: string): Promise<BackupEntry[]> {
+  if (!isDesktop()) return Promise.resolve([]);
+  return invoke("list_backups", { playerPath });
+}
+
+export function restoreBackup(playerPath: string, backupPath: string): Promise<RestoreReceipt> {
+  return invoke("restore_backup", { playerPath, backupPath });
+}
+
+export function revealBackup(playerPath: string, backupPath: string): Promise<void> {
+  return invoke("reveal_backup", { playerPath, backupPath });
+}
+
+let updateCheck: Promise<UpdateStatus> | null = null;
+
+export function checkForUpdates(): Promise<UpdateStatus> {
+  if (!isDesktop()) {
+    return Promise.resolve({
+      state: "preview",
+      currentVersion: "0.1.0",
+      latestVersion: null,
+      releaseName: null,
+      releaseUrl: null,
+      publishedAt: null,
+      message: "GitHub release checks run in the desktop app.",
+    });
+  }
+  if (updateCheck) return updateCheck;
+  updateCheck = invoke<UpdateStatus>("check_for_updates").finally(() => {
+    updateCheck = null;
+  });
+  return updateCheck;
+}
+
+export function openReleasePage(url: string): Promise<void> {
+  return invoke("open_release_page", { url });
+}
+
+export function appVersion(): Promise<string> {
+  return isDesktop() ? getVersion() : Promise.resolve("0.1.0");
 }
