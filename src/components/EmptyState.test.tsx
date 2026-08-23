@@ -32,13 +32,13 @@ describe("EmptyState", () => {
     const historical = player({
       path: "/Players/OldHero.plr",
       name: "OldHero",
-      version: 279,
+      version: 278,
       compatibility: {
         state: "untested",
-        fileVersion: 279,
-        formatLabel: "Historical Terraria player v279",
+        fileVersion: 278,
+        formatLabel: "Historical Terraria player v278",
         canEdit: false,
-        message: "Player v279 has not passed PlrForge's golden-fixture suite.",
+        message: "Player v278 has not passed PlrForge's golden-fixture suite.",
       },
     });
     render(<EmptyState players={[historical]} onOpen={vi.fn()} onLoad={vi.fn()} />);

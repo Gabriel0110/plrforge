@@ -525,8 +525,8 @@ mod integration_tests {
         let inventory_slot = before
             .inventory
             .iter()
-            .position(|item| item.item_id == 0)
-            .expect("fixture needs one empty inventory slot");
+            .position(|item| item.item_id != 3043)
+            .expect("fixture needs one inventory slot that is not already a Magic Lantern");
         before.inventory[inventory_slot] = ItemSlot {
             slot: inventory_slot as u8,
             item_id: 3043,
@@ -538,8 +538,8 @@ mod integration_tests {
             .storage
             .safe
             .iter()
-            .position(|item| item.item_id == 0)
-            .expect("fixture needs one empty Safe slot");
+            .position(|item| item.item_id != 2768)
+            .expect("fixture needs one Safe slot that is not already a Drill Containment Unit");
         before.storage.safe[safe_slot] = ItemSlot {
             slot: safe_slot as u8,
             item_id: 2768,
@@ -588,8 +588,12 @@ mod integration_tests {
         before.character.stats.life = 499;
         before.character.appearance.hair = 42;
         before.character.appearance.hair_color.r ^= 0xff;
-        before.character.appearance.voice_variant = 4;
-        before.character.appearance.voice_pitch = -0.5;
+        if before.version >= 280 {
+            before.character.appearance.voice_variant = 4;
+        }
+        if before.version >= 281 {
+            before.character.appearance.voice_pitch = -0.5;
+        }
         before.character.upgrades.used_ambrosia = !before.character.upgrades.used_ambrosia;
         before.character.counters.pve_deaths += 1;
 

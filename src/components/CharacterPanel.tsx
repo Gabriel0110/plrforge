@@ -15,6 +15,7 @@ import type {
 
 type Props = {
   character: CharacterDocument;
+  version: number;
   onChange: (character: CharacterDocument, description: string, location: string) => void;
 };
 
@@ -126,7 +127,7 @@ function coinLabel(copper: number) {
   return `${platinum}p ${gold}g ${silver}s ${remainder}c`;
 }
 
-export function CharacterPanel({ character, onChange }: Props) {
+export function CharacterPanel({ character, version, onChange }: Props) {
   const update = (next: Partial<CharacterDocument>, description: string, location: string) => {
     onChange({ ...character, ...next }, description, location);
   };
@@ -141,7 +142,7 @@ export function CharacterPanel({ character, onChange }: Props) {
     <main className="min-h-0 overflow-y-auto px-7 py-6">
       <div className="mx-auto max-w-[1040px]">
         <div className="mb-6 flex items-end justify-between gap-6">
-          <div><p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300/65">Character editor</p><h1 className="mt-2 text-2xl font-semibold tracking-[-0.045em] text-white/92">Identity, stats, and progression</h1><p className="mt-2 max-w-[68ch] text-sm leading-6 text-white/38">Every value below maps to a verified Terraria v325 player field and participates in the same undo, backup, and save verification flow as item edits.</p></div>
+          <div><p className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-300/65">Character editor</p><h1 className="mt-2 text-2xl font-semibold tracking-[-0.045em] text-white/92">Identity, stats, and progression</h1><p className="mt-2 max-w-[68ch] text-sm leading-6 text-white/38">Every editable value below maps to the verified player v{version} codec and participates in the same undo, backup, and save verification flow as item edits.</p></div>
           <div className="shrink-0 rounded-lg border border-white/[0.08] bg-black/15 px-3 py-2 text-right"><p className="font-mono text-[9px] uppercase tracking-[0.12em] text-white/28">Play time</p><p className="mt-1 font-mono text-xs text-white/65">{durationLabel(character.playTimeTicks)}</p></div>
         </div>
 
@@ -151,14 +152,14 @@ export function CharacterPanel({ character, onChange }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <label className="col-span-2 text-[11px] text-white/42">Name<input aria-label="Character name" className={fieldClass} value={character.name} onChange={(event) => update({ name: limitName(event.target.value) }, "Character name changed", "Character · Identity")} /></label>
               <label className="text-[11px] text-white/42">Difficulty<select aria-label="Character difficulty" className={fieldClass} value={character.difficulty} onChange={(event) => update({ difficulty: Number(event.target.value) }, `Difficulty changed to ${difficulties[Number(event.target.value)]}`, "Character · Identity")}>{difficulties.map((label, index) => <option key={label} value={index}>{label}</option>)}</select></label>
-              <label className="text-[11px] text-white/42">Team<select aria-label="Character team" className={fieldClass} value={character.appearance.team} onChange={(event) => updateAppearance({ team: Number(event.target.value) }, `Team changed to ${teams[Number(event.target.value)]}`, "Character · Identity")}>{teams.map((label, index) => <option key={label} value={index}>{label}</option>)}</select></label>
+              {version >= 283 ? <label className="text-[11px] text-white/42">Team<select aria-label="Character team" className={fieldClass} value={character.appearance.team} onChange={(event) => updateAppearance({ team: Number(event.target.value) }, `Team changed to ${teams[Number(event.target.value)]}`, "Character · Identity")}>{teams.map((label, index) => <option key={label} value={index}>{label}</option>)}</select></label> : <div className="text-[11px] text-white/42">Team<div className={`${fieldClass} flex items-center text-white/32`}>Not stored by player v{version}</div></div>}
               <label className="col-span-2 text-[11px] text-white/42">Play time ticks<input aria-label="Play time ticks" inputMode="numeric" className={`${fieldClass} font-mono`} value={character.playTimeTicks} onChange={(event) => { if (/^\d+$/.test(event.target.value)) update({ playTimeTicks: event.target.value }, "Play time changed", "Character · Identity"); }} /></label>
             </div>
             {character.difficulty !== 0 && <div className="mt-4 flex gap-2 rounded-lg border border-amber-300/12 bg-amber-300/[0.035] p-3 text-[10px] leading-4 text-amber-100/54"><ShieldWarning className="mt-px size-4 shrink-0 text-amber-300/65" /><span>Difficulty changes affect death behavior and Journey-only systems. The editor writes the official mode byte but does not invent missing Journey research data.</span></div>}
           </section>
 
           <section className={cardClass}>
-            <SectionTitle icon={Heart} eyebrow="Vitals" title="Health and mana" detail="Maximum values match the limits enforced by Terraria's v325 loader." />
+            <SectionTitle icon={Heart} eyebrow="Vitals" title="Health and mana" detail="Maximum values match the limits enforced by Terraria's player loader." />
             <div className="grid grid-cols-2 gap-3">
               <label className="text-[11px] text-white/42">Current health<input aria-label="Current health" type="number" min={-1000} max={1000} className={`${fieldClass} font-mono`} value={character.stats.life} onChange={(event) => updateStats({ life: clamp(event.target.value, -1000, 1000) }, "Current health changed")} /></label>
               <label className="text-[11px] text-white/42">Maximum health<input aria-label="Maximum health" type="number" min={0} max={500} className={`${fieldClass} font-mono`} value={character.stats.lifeMax} onChange={(event) => updateStats({ lifeMax: clamp(event.target.value, 0, 500) }, "Maximum health changed")} /></label>
@@ -169,14 +170,14 @@ export function CharacterPanel({ character, onChange }: Props) {
           </section>
 
           <section className={`${cardClass} col-span-2`}>
-            <SectionTitle icon={Palette} eyebrow="Appearance" title="Style and colors" detail="Styles 0–11 and hair 0–227 are the ranges present in Terraria v325." />
+            <SectionTitle icon={Palette} eyebrow="Appearance" title="Style and colors" detail={`Styles 0–11 and hair 0–227 are verified for player v${version}.`} />
             <div className="grid grid-cols-4 gap-3">
-              <label className="text-[11px] text-white/42">Character style<select aria-label="Character style" className={fieldClass} value={character.appearance.skinVariant} onChange={(event) => updateAppearance({ skinVariant: Number(event.target.value) }, "Character style changed")}>{styles.map((label, index) => <option key={label} value={index}>{label}</option>)}</select></label>
+              <label className="text-[11px] text-white/42">Character style<select aria-label="Character style" className={fieldClass} value={character.appearance.skinVariant} onChange={(event) => { const skinVariant = Number(event.target.value); updateAppearance({ skinVariant, ...(version < 280 ? { voiceVariant: skinVariant < 4 ? 1 : 2, voicePitch: 0 } : {}) }, "Character style changed"); }}>{styles.map((label, index) => <option key={label} value={index}>{label}</option>)}</select></label>
               <label className="text-[11px] text-white/42">Hair style<input aria-label="Hair style" type="number" min={0} max={227} className={`${fieldClass} font-mono`} value={character.appearance.hair} onChange={(event) => updateAppearance({ hair: clamp(event.target.value, 0, 227) }, "Hair style changed")} /></label>
               <label className="text-[11px] text-white/42">Hair dye ID<input aria-label="Hair dye ID" type="number" min={0} max={255} className={`${fieldClass} font-mono`} value={character.appearance.hairDye} onChange={(event) => updateAppearance({ hairDye: clamp(event.target.value, 0, 255) }, "Hair dye changed")} /></label>
-              <label className="text-[11px] text-white/42">Voice<select aria-label="Voice variant" className={fieldClass} value={character.appearance.voiceVariant} onChange={(event) => updateAppearance({ voiceVariant: Number(event.target.value) }, "Voice changed")}>{[1, 2, 3, 4].map((voice) => <option key={voice} value={voice}>Voice {voice}</option>)}</select></label>
+              {version >= 280 ? <label className="text-[11px] text-white/42">Voice<select aria-label="Voice variant" className={fieldClass} value={character.appearance.voiceVariant} onChange={(event) => updateAppearance({ voiceVariant: Number(event.target.value) }, "Voice changed")}>{[1, 2, 3, 4].map((voice) => <option key={voice} value={voice}>Voice {voice}</option>)}</select></label> : <div className="text-[11px] text-white/42">Voice<div className={`${fieldClass} flex items-center text-white/32`}>Derived from character style</div></div>}
             </div>
-            <div className="mt-4 grid grid-cols-[1fr_160px] items-end gap-5"><label className="text-[11px] text-white/42">Voice pitch <span className="ml-1 font-mono text-white/62">{character.appearance.voicePitch.toFixed(2)}</span><input aria-label="Voice pitch" type="range" min={-1} max={1} step={0.05} className="mt-3 w-full accent-emerald-400" value={character.appearance.voicePitch} onChange={(event) => updateAppearance({ voicePitch: Number(event.target.value) }, "Voice pitch changed")} /></label><button type="button" className="h-9 rounded-lg border border-white/[0.09] text-[11px] text-white/48 transition hover:bg-white/[0.04] hover:text-white/72" onClick={() => updateAppearance({ voicePitch: 0 }, "Voice pitch reset")}>Reset pitch</button></div>
+            {version >= 281 ? <div className="mt-4 grid grid-cols-[1fr_160px] items-end gap-5"><label className="text-[11px] text-white/42">Voice pitch <span className="ml-1 font-mono text-white/62">{character.appearance.voicePitch.toFixed(2)}</span><input aria-label="Voice pitch" type="range" min={-1} max={1} step={0.05} className="mt-3 w-full accent-emerald-400" value={character.appearance.voicePitch} onChange={(event) => updateAppearance({ voicePitch: Number(event.target.value) }, "Voice pitch changed")} /></label><button type="button" className="h-9 rounded-lg border border-white/[0.09] text-[11px] text-white/48 transition hover:bg-white/[0.04] hover:text-white/72" onClick={() => updateAppearance({ voicePitch: 0 }, "Voice pitch reset")}>Reset pitch</button></div> : <p className="mt-4 rounded-lg border border-white/[0.07] bg-black/10 px-3 py-2 text-[10px] leading-4 text-white/32">Player v{version} does not serialize voice pitch, so PlrForge leaves that field untouched.</p>}
             <div className="mt-5 grid grid-cols-7 gap-3 border-t border-white/[0.07] pt-5">
               {colors.map(({ key, label }) => { const value = character.appearance[key]; return <label key={key} className="text-[10px] text-white/38"><span className="mb-2 block">{label}</span><span className="flex h-10 items-center gap-2 rounded-lg border border-white/[0.09] bg-black/20 px-2"><input aria-label={`${label} color`} type="color" className="size-6 cursor-pointer border-0 bg-transparent p-0" value={toHex(value)} onChange={(event) => updateAppearance({ [key]: fromHex(event.target.value) }, `${label} color changed`)} /><span className="font-mono text-[9px] uppercase text-white/42">{toHex(value)}</span></span></label>; })}
             </div>

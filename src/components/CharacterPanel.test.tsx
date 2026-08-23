@@ -7,7 +7,7 @@ import { CharacterPanel } from "./CharacterPanel";
 
 function Harness() {
   const [character, setCharacter] = useState<CharacterDocument>(demoPlayer.character);
-  return <CharacterPanel character={character} onChange={(next) => setCharacter(next)} />;
+  return <CharacterPanel character={character} version={325} onChange={(next) => setCharacter(next)} />;
 }
 
 describe("CharacterPanel", () => {
@@ -33,5 +33,21 @@ describe("CharacterPanel", () => {
 
     fireEvent.change(screen.getByLabelText("Hair color"), { target: { value: "#010203" } });
     expect(screen.getByText("#010203")).toBeTruthy();
+  });
+
+  it("hides fields v279 cannot serialize and derives its legacy voice from style", () => {
+    const observed: { current?: CharacterDocument } = {};
+    render(<CharacterPanel character={demoPlayer.character} version={279} onChange={(next) => { observed.current = next; }} />);
+
+    expect(screen.queryByLabelText("Character team")).toBeNull();
+    expect(screen.queryByLabelText("Voice variant")).toBeNull();
+    expect(screen.queryByLabelText("Voice pitch")).toBeNull();
+    expect(screen.getByText("Not stored by player v279")).toBeTruthy();
+    expect(screen.getByText("Derived from character style")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Character style"), { target: { value: "5" } });
+    expect(observed.current?.appearance.skinVariant).toBe(5);
+    expect(observed.current?.appearance.voiceVariant).toBe(2);
+    expect(observed.current?.appearance.voicePitch).toBe(0);
   });
 });

@@ -5,9 +5,9 @@
 - `npm run build`
 - `npm run test`
 - `cargo test --manifest-path src-tauri/Cargo.toml`
-- Run `PLRFORGE_FIXTURE=/absolute/path/to/a/disposable.plr cargo test --manifest-path src-tauri/Cargo.toml external_fixture -- --nocapture` once with a v317 fixture and once with a v325 fixture.
+- Run `PLRFORGE_FIXTURE=/absolute/path/to/a/disposable.plr cargo test --manifest-path src-tauri/Cargo.toml external_fixture -- --nocapture` once each with v279, v317, and v325 fixtures.
 - Confirm the external fixture's no-edit save and generated backup are byte-identical to the encrypted source.
-- Confirm verified v317/v325 files appear as **Verified**, older fixture-gated files such as v279 appear as **Needs fixture**, newer files appear as **Update needed**, and only verified files can enter the editor.
+- Confirm verified v279/v317/v325 files appear as **Verified**, other historical fixture-gated files appear as **Needs fixture**, newer files appear as **Update needed**, and only verified files can enter the editor.
 - Load, modify, save, and re-open a disposable v325 character copy.
 - Exercise inventory-to-storage copy/move and active/inactive loadout edits on a disposable copy.
 - Exercise a variable-length name, stats, appearance color, voice, permanent-upgrade, and death-counter edit on a disposable copy.

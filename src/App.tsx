@@ -470,7 +470,7 @@ export default function App() {
                 </main>
                 <ItemInspector item={selectedItem} slotLabel={targetLabel} canStack={canStack(selected)} canFavorite={canFavorite(selected, activeVersion)} onPatch={patchSelected} onRemove={removeSelected} onCopy={() => setClipboard({ item: selectedItem, source: selected, mode: "copy" })} onMove={() => setClipboard({ item: selectedItem, source: selected, mode: "move" })} onPaste={paste} pasteLabel={clipboard && !sameLocation(clipboard.source, selected) ? itemName(clipboard.item.itemId) : null} />
               </div>
-            ) : view === "overview" ? <CharacterPanel character={editor.character} onChange={applyCharacterChange} />
+            ) : view === "overview" ? <CharacterPanel character={editor.character} version={activeVersion} onChange={applyCharacterChange} />
               : view === "effects" ? <EffectsPanel effects={editor.effects} onChange={(effects, description, location) => applySystemChange({ effects }, description, location)} />
               : view === "journey" ? <JourneyPanel journey={editor.journey} difficulty={editor.character.difficulty} onChange={(journey, description, location) => applySystemChange({ journey }, description, location)} />
               : view === "spawns" ? <SpawnPointsPanel points={editor.spawnPoints} onChange={(spawnPoints, description, location) => applySystemChange({ spawnPoints }, description, location)} />

@@ -73,10 +73,11 @@ The codec, editing work, and optional local icon adapter are complete. The built
 
 ### Phase 4 — compatibility and release (in progress)
 
-- A centralized codec registry now classifies v317 and v325 as verified, other historical versions as fixture-gated, and newer versions as unsupported without attempting a speculative parse.
+- A centralized codec registry now classifies v279, v317, and v325 as verified, other historical versions as fixture-gated, and newer versions as unsupported without attempting a speculative parse.
+- The v279 codec accounts for the absent team byte, pre-v282 research block, derived voice, and absent voice-pitch field while retaining the 1.4.4-era loadout and Journey systems.
 - The v317 codec accounts for the pre-v322 equipment records without favorite bytes and the pre-v324 character header, and passes the same complete mutation and byte-identical no-op suite as v325.
 - Player discovery and file opening expose the same supported/untested/unsupported decision, and unsupported files remain fail-closed with an actionable explanation.
-- The opt-in external v317/v325 fixture suite proves that a no-edit save reproduces the exact encrypted source bytes and preserves the exact backup bytes.
+- The opt-in external v279/v317/v325 fixture suite proves that a no-edit save reproduces the exact encrypted source bytes and preserves the exact backup bytes.
 - Golden fixtures for supported historical formats, beginning with 1.4.4 and 1.4.5.
 - Unsigned preview builds, then Apple notarization and Windows code signing.
 - Manual and opt-in GitHub Release discovery is implemented; signed download/install remains gated on a protected updater key and platform signing identities.

@@ -2,7 +2,7 @@
 
 PlrForge is an open-source, local-first Terraria character editor for macOS and Windows. It is an independent project and is not affiliated with or endorsed by Re-Logic.
 
-The current build loads encrypted desktop `.plr` files at versions 317 and 325 and edits character identity, difficulty, play time, health/mana, appearance and voice, permanent upgrades, tax savings, death counters, and every item-bearing surface. That includes the 58 inventory slots, three equipment loadouts, vanity and dyes, pets/mounts/hooks, and four personal storage containers. It also edits all 44 saved buff records, named spawn points, Journey research, the three per-player Journey powers, and both Super Cart flags. Every surface shares one undo history and guarded backup-and-verify save transaction. A centralized compatibility registry keeps other historical, unverified, and newer player formats out of the editor until their own golden fixtures pass.
+The current build loads encrypted desktop `.plr` files at versions 279, 317, and 325 and edits character identity, difficulty, play time, health/mana, appearance, permanent upgrades, tax savings, death counters, and every item-bearing surface. Voice and team controls appear only when the loaded format can store them. The item surfaces include the 58 inventory slots, three equipment loadouts, vanity and dyes, pets/mounts/hooks, and four personal storage containers. PlrForge also edits all 44 saved buff records, named spawn points, Journey research, the three per-player Journey powers, and both Super Cart flags. Every surface shares one undo history and guarded backup-and-verify save transaction. A centralized compatibility registry keeps other historical, unverified, and newer player formats out of the editor until their own golden fixtures pass.
 
 ## Why Tauri
 
@@ -24,7 +24,7 @@ npm run desktop:dev
 
 The browser build opens a safe demo character. Native file access is available only inside Tauri.
 
-To run the optional real-format regression suite against a disposable v317 or v325 player copy, set `PLRFORGE_FIXTURE` to its absolute path. The tests copy it into a temporary directory before writing and prove that a no-edit save and its backup remain byte-identical to the encrypted source:
+To run the optional real-format regression suite against a disposable v279, v317, or v325 player copy, set `PLRFORGE_FIXTURE` to its absolute path. The tests copy it into a temporary directory before writing and prove that a no-edit save and its backup remain byte-identical to the encrypted source:
 
 ```sh
 PLRFORGE_FIXTURE=/absolute/path/to/disposable.plr cargo test --manifest-path src-tauri/Cargo.toml external_fixture -- --nocapture

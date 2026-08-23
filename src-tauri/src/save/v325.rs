@@ -4,6 +4,7 @@ use std::path::Path;
 
 const VERSION: i32 = 325;
 const VERSION_317: i32 = 317;
+const VERSION_279: i32 = 279;
 const METADATA_END: usize = 24;
 const HEADER_AFTER_NAME: usize = 80;
 const ARMOR_RECORDS: usize = 20;
@@ -26,15 +27,35 @@ struct Format {
     equipment_record_size: usize,
     serialized_item_size: usize,
     equipment_favorites: bool,
+    team: bool,
+    research_format_flag: bool,
+    voice_variant: bool,
+    voice_pitch: bool,
 }
 
 impl Format {
+    const V279: Self = Self {
+        version: VERSION_279,
+        header_after_name: 78,
+        equipment_record_size: 5,
+        serialized_item_size: 9,
+        equipment_favorites: false,
+        team: false,
+        research_format_flag: false,
+        voice_variant: false,
+        voice_pitch: false,
+    };
+
     const V317: Self = Self {
         version: VERSION_317,
         header_after_name: 79,
         equipment_record_size: 5,
         serialized_item_size: 9,
         equipment_favorites: false,
+        team: true,
+        research_format_flag: true,
+        voice_variant: true,
+        voice_pitch: true,
     };
 
     const V325: Self = Self {
@@ -43,10 +64,15 @@ impl Format {
         equipment_record_size: EQUIPMENT_RECORD_SIZE,
         serialized_item_size: INVENTORY_RECORD_SIZE,
         equipment_favorites: true,
+        team: true,
+        research_format_flag: true,
+        voice_variant: true,
+        voice_pitch: true,
     };
 
     fn from_version(version: i32) -> Result<Self, SaveError> {
         match version {
+            VERSION_279 => Ok(Self::V279),
             VERSION_317 => Ok(Self::V317),
             VERSION => Ok(Self::V325),
             _ => Err(SaveError::UnsupportedVersion(version)),
@@ -61,6 +87,14 @@ impl Format {
 
     fn post_bread_shift(self) -> usize {
         usize::from(self.version >= 324)
+    }
+
+    fn team_shift(self) -> usize {
+        usize::from(self.team)
+    }
+
+    fn research_prefix_size(self) -> usize {
+        usize::from(self.research_format_flag)
     }
 }
 
@@ -254,8 +288,8 @@ struct Layout {
     super_cart: usize,
     current_loadout_index: usize,
     loadouts: usize,
-    voice_variant: usize,
-    voice_pitch: usize,
+    voice_variant: Option<usize>,
+    voice_pitch: Option<usize>,
 }
 
 pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocument, SaveError> {
@@ -268,6 +302,14 @@ pub(super) fn parse_v317(
     data: &[u8],
 ) -> Result<PlayerDocument, SaveError> {
     parse_version(path, source_hash, data, VERSION_317)
+}
+
+pub(super) fn parse_v279(
+    path: &Path,
+    source_hash: &str,
+    data: &[u8],
+) -> Result<PlayerDocument, SaveError> {
+    parse_version(path, source_hash, data, VERSION_279)
 }
 
 fn parse_version(
@@ -290,9 +332,14 @@ fn parse_version(
     cursor += 8;
     let hair = read_i32(data, cursor)?;
     let hair_dye = read_u8(data, cursor + 4)?;
-    let team = read_u8(data, cursor + 5)?;
-    let skin_variant = read_u8(data, cursor + 9)?;
-    cursor += 10;
+    let team_shift = format.team_shift();
+    let team = if format.team {
+        read_u8(data, cursor + 5)?
+    } else {
+        0
+    };
+    let skin_variant = read_u8(data, cursor + 8 + team_shift)?;
+    cursor += 9 + team_shift;
     let life = read_i32(data, cursor)?;
     cursor += 4;
     let life_max = read_i32(data, cursor)?;
@@ -303,7 +350,8 @@ fn parse_version(
 
     let header = name_end;
     let post_bread_shift = format.post_bread_shift();
-    let colors = header + 58 + post_bread_shift;
+    let colors = header + 57 + team_shift + post_bread_shift;
+    let default_voice = if skin_variant < 4 { 1 } else { 2 };
     let appearance = CharacterAppearance {
         hair,
         hair_dye,
@@ -316,8 +364,16 @@ fn parse_version(
         under_shirt_color: read_color(data, colors + 12)?,
         pants_color: read_color(data, colors + 15)?,
         shoe_color: read_color(data, colors + 18)?,
-        voice_variant: read_u8(data, layout.voice_variant)?,
-        voice_pitch: read_f32(data, layout.voice_pitch)?,
+        voice_variant: layout
+            .voice_variant
+            .map(|offset| read_u8(data, offset))
+            .transpose()?
+            .unwrap_or(default_voice),
+        voice_pitch: layout
+            .voice_pitch
+            .map(|offset| read_f32(data, offset))
+            .transpose()?
+            .unwrap_or(0.0),
     };
 
     let inventory = read_slots(
@@ -357,7 +413,7 @@ fn parse_version(
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let misc_flags = read_u8(data, layout.name_end + 17)?;
+    let misc_flags = read_u8(data, layout.name_end + 16 + team_shift)?;
     let misc_hidden = (0..MISC_RECORDS)
         .map(|index| misc_flags & (1 << index) != 0)
         .collect();
@@ -380,27 +436,27 @@ fn parse_version(
             },
             appearance,
             upgrades: PermanentUpgrades {
-                extra_accessory: read_bool(data, header + 35)?,
-                unlocked_biome_torches: read_bool(data, header + 36)?,
-                using_biome_torches: read_bool(data, header + 37)?,
-                ate_artisan_bread: read_bool(data, header + 38)?,
-                used_aegis_crystal: read_bool(data, header + 39 + post_bread_shift)?,
-                used_aegis_fruit: read_bool(data, header + 40 + post_bread_shift)?,
-                used_arcane_crystal: read_bool(data, header + 41 + post_bread_shift)?,
-                used_galaxy_pearl: read_bool(data, header + 42 + post_bread_shift)?,
-                used_gummy_worm: read_bool(data, header + 43 + post_bread_shift)?,
-                used_ambrosia: read_bool(data, header + 44 + post_bread_shift)?,
-                downed_dd2_event: read_bool(data, header + 45 + post_bread_shift)?,
+                extra_accessory: read_bool(data, header + 34 + team_shift)?,
+                unlocked_biome_torches: read_bool(data, header + 35 + team_shift)?,
+                using_biome_torches: read_bool(data, header + 36 + team_shift)?,
+                ate_artisan_bread: read_bool(data, header + 37 + team_shift)?,
+                used_aegis_crystal: read_bool(data, header + 38 + team_shift + post_bread_shift)?,
+                used_aegis_fruit: read_bool(data, header + 39 + team_shift + post_bread_shift)?,
+                used_arcane_crystal: read_bool(data, header + 40 + team_shift + post_bread_shift)?,
+                used_galaxy_pearl: read_bool(data, header + 41 + team_shift + post_bread_shift)?,
+                used_gummy_worm: read_bool(data, header + 42 + team_shift + post_bread_shift)?,
+                used_ambrosia: read_bool(data, header + 43 + team_shift + post_bread_shift)?,
+                downed_dd2_event: read_bool(data, header + 44 + team_shift + post_bread_shift)?,
             },
             counters: CharacterCounters {
-                tax_money: read_i32(data, header + 46 + post_bread_shift)?,
-                pve_deaths: read_i32(data, header + 50 + post_bread_shift)?,
-                pvp_deaths: read_i32(data, header + 54 + post_bread_shift)?,
+                tax_money: read_i32(data, header + 45 + team_shift + post_bread_shift)?,
+                pve_deaths: read_i32(data, header + 49 + team_shift + post_bread_shift)?,
+                pvp_deaths: read_i32(data, header + 53 + team_shift + post_bread_shift)?,
             },
         },
         effects: read_effects(data, layout.buffs)?,
         journey: JourneyDocument {
-            research: read_research(data, layout.research)?,
+            research: read_research(data, layout.research, layout.format)?,
             powers: journey_powers,
             serialized_power_ids,
             unlocked_super_cart: super_cart & 1 != 0,
@@ -474,14 +530,19 @@ fn read_spawn_points(data: &[u8], mut cursor: usize) -> Result<Vec<SpawnPoint>, 
     ))
 }
 
-fn read_research(data: &[u8], base: usize) -> Result<Vec<ResearchEntry>, SaveError> {
-    let count = read_i32(data, base + 1)?;
+fn read_research(
+    data: &[u8],
+    base: usize,
+    format: Format,
+) -> Result<Vec<ResearchEntry>, SaveError> {
+    let prefix_size = format.research_prefix_size();
+    let count = read_i32(data, base + prefix_size)?;
     if !(0..=20_000).contains(&count) {
         return Err(SaveError::Validation(format!(
             "creative research entry count {count} is not credible"
         )));
     }
-    let mut cursor = base + 5;
+    let mut cursor = base + prefix_size + 4;
     let mut entries = Vec::with_capacity(count as usize);
     for _ in 0..count {
         let (persistent_id, end) = read_dotnet_string(data, cursor)?;
@@ -577,6 +638,27 @@ pub(super) fn validate_document_v317(
     )
 }
 
+pub(super) fn validate_document_v279(
+    character: &CharacterDocument,
+    effects: &EffectsDocument,
+    journey: &JourneyDocument,
+    spawn_points: &[SpawnPoint],
+    inventory: &[ItemSlot],
+    equipment: &EquipmentDocument,
+    storage: &StorageDocument,
+) -> Result<(), SaveError> {
+    validate_document_version(
+        VERSION_279,
+        character,
+        effects,
+        journey,
+        spawn_points,
+        inventory,
+        equipment,
+        storage,
+    )
+}
+
 #[allow(clippy::too_many_arguments)]
 fn validate_document_version(
     version: i32,
@@ -588,7 +670,7 @@ fn validate_document_version(
     equipment: &EquipmentDocument,
     storage: &StorageDocument,
 ) -> Result<(), SaveError> {
-    validate_character(character)?;
+    validate_character(character, Format::from_version(version)?)?;
     validate_effects(effects)?;
     validate_journey(journey)?;
     validate_spawn_points(spawn_points)?;
@@ -703,6 +785,13 @@ pub(super) fn patch_document_v317(
     patch_document_version(data, document, VERSION_317)
 }
 
+pub(super) fn patch_document_v279(
+    data: &[u8],
+    document: PatchDocument<'_>,
+) -> Result<Vec<u8>, SaveError> {
+    patch_document_version(data, document, VERSION_279)
+}
+
 fn patch_document_version(
     data: &[u8],
     document: PatchDocument<'_>,
@@ -751,7 +840,7 @@ fn patch_document_version(
     layout = locate_layout(&patched)?;
     patched.splice(
         layout.research..layout.research_end,
-        encode_research(&journey.research),
+        encode_research(&journey.research, layout.format),
     );
     layout = locate_layout(&patched)?;
     patched.splice(
@@ -795,13 +884,14 @@ fn patch_document_version(
             &equipment.misc_dyes[slot],
         );
     }
-    let mut misc_flags = patched[layout.name_end + 17] & !0b1_1111;
+    let misc_flags_offset = layout.name_end + 16 + layout.format.team_shift();
+    let mut misc_flags = patched[misc_flags_offset] & !0b1_1111;
     for (index, hidden) in equipment.misc_hidden.iter().copied().enumerate() {
         if hidden {
             misc_flags |= 1 << index;
         }
     }
-    patched[layout.name_end + 17] = misc_flags;
+    patched[misc_flags_offset] = misc_flags;
     write_slots(
         &mut patched,
         layout.banks[0],
@@ -833,7 +923,7 @@ fn patch_document_version(
     Ok(patched)
 }
 
-fn validate_character(character: &CharacterDocument) -> Result<(), SaveError> {
+fn validate_character(character: &CharacterDocument, format: Format) -> Result<(), SaveError> {
     let name_units = character.name.encode_utf16().count();
     if character.name.trim().is_empty() || name_units > 20 {
         return Err(SaveError::Validation(
@@ -884,6 +974,12 @@ fn validate_character(character: &CharacterDocument) -> Result<(), SaveError> {
             "team must be None, Red, Green, Blue, Yellow, or Pink".into(),
         ));
     }
+    if !format.team && appearance.team != 0 {
+        return Err(SaveError::Validation(format!(
+            "player v{} cannot store a team selection",
+            format.version
+        )));
+    }
     if appearance.skin_variant > 11 {
         return Err(SaveError::Validation(
             "character style must be between 0 and 11".into(),
@@ -898,6 +994,21 @@ fn validate_character(character: &CharacterDocument) -> Result<(), SaveError> {
         return Err(SaveError::Validation(
             "voice pitch must be a finite value from -1.0 to 1.0".into(),
         ));
+    }
+    if !format.voice_variant {
+        let derived_voice = if appearance.skin_variant < 4 { 1 } else { 2 };
+        if appearance.voice_variant != derived_voice {
+            return Err(SaveError::Validation(format!(
+                "player v{} derives its voice from character style and cannot store a voice selection",
+                format.version
+            )));
+        }
+    }
+    if !format.voice_pitch && appearance.voice_pitch != 0.0 {
+        return Err(SaveError::Validation(format!(
+            "player v{} cannot store a voice pitch",
+            format.version
+        )));
     }
     if character.counters.tax_money < 0
         || character.counters.pve_deaths < 0
@@ -1031,9 +1142,11 @@ fn encode_spawn_points(points: &[SpawnPoint]) -> Vec<u8> {
     encoded
 }
 
-fn encode_research(entries: &[ResearchEntry]) -> Vec<u8> {
+fn encode_research(entries: &[ResearchEntry], format: Format) -> Vec<u8> {
     let mut encoded = Vec::new();
-    encoded.push(0);
+    if format.research_format_flag {
+        encoded.push(0);
+    }
     encoded.extend_from_slice(&(entries.len() as i32).to_le_bytes());
     for entry in entries {
         encoded.extend_from_slice(&encode_dotnet_string(&entry.persistent_id));
@@ -1072,31 +1185,39 @@ fn write_character(
     data[base + 1..base + 9].copy_from_slice(&ticks.to_le_bytes());
     data[base + 9..base + 13].copy_from_slice(&character.appearance.hair.to_le_bytes());
     data[base + 13] = character.appearance.hair_dye;
-    data[base + 14] = character.appearance.team;
-    data[base + 18] = character.appearance.skin_variant;
-    data[base + 19..base + 23].copy_from_slice(&character.stats.life.to_le_bytes());
-    data[base + 23..base + 27].copy_from_slice(&character.stats.life_max.to_le_bytes());
-    data[base + 27..base + 31].copy_from_slice(&character.stats.mana.to_le_bytes());
-    data[base + 31..base + 35].copy_from_slice(&character.stats.mana_max.to_le_bytes());
+    let team_shift = layout.format.team_shift();
+    if layout.format.team {
+        data[base + 14] = character.appearance.team;
+    }
+    data[base + 17 + team_shift] = character.appearance.skin_variant;
+    data[base + 18 + team_shift..base + 22 + team_shift]
+        .copy_from_slice(&character.stats.life.to_le_bytes());
+    data[base + 22 + team_shift..base + 26 + team_shift]
+        .copy_from_slice(&character.stats.life_max.to_le_bytes());
+    data[base + 26 + team_shift..base + 30 + team_shift]
+        .copy_from_slice(&character.stats.mana.to_le_bytes());
+    data[base + 30 + team_shift..base + 34 + team_shift]
+        .copy_from_slice(&character.stats.mana_max.to_le_bytes());
 
     let upgrades = &character.upgrades;
-    data[base + 35] = u8::from(upgrades.extra_accessory);
-    data[base + 36] = u8::from(upgrades.unlocked_biome_torches);
-    data[base + 37] = u8::from(upgrades.using_biome_torches);
-    data[base + 38] = u8::from(upgrades.ate_artisan_bread);
+    data[base + 34 + team_shift] = u8::from(upgrades.extra_accessory);
+    data[base + 35 + team_shift] = u8::from(upgrades.unlocked_biome_torches);
+    data[base + 36 + team_shift] = u8::from(upgrades.using_biome_torches);
+    data[base + 37 + team_shift] = u8::from(upgrades.ate_artisan_bread);
     let post_bread_shift = layout.format.post_bread_shift();
-    data[base + 39 + post_bread_shift] = u8::from(upgrades.used_aegis_crystal);
-    data[base + 40 + post_bread_shift] = u8::from(upgrades.used_aegis_fruit);
-    data[base + 41 + post_bread_shift] = u8::from(upgrades.used_arcane_crystal);
-    data[base + 42 + post_bread_shift] = u8::from(upgrades.used_galaxy_pearl);
-    data[base + 43 + post_bread_shift] = u8::from(upgrades.used_gummy_worm);
-    data[base + 44 + post_bread_shift] = u8::from(upgrades.used_ambrosia);
-    data[base + 45 + post_bread_shift] = u8::from(upgrades.downed_dd2_event);
-    data[base + 46 + post_bread_shift..base + 50 + post_bread_shift]
+    let upgrade_shift = team_shift + post_bread_shift;
+    data[base + 38 + upgrade_shift] = u8::from(upgrades.used_aegis_crystal);
+    data[base + 39 + upgrade_shift] = u8::from(upgrades.used_aegis_fruit);
+    data[base + 40 + upgrade_shift] = u8::from(upgrades.used_arcane_crystal);
+    data[base + 41 + upgrade_shift] = u8::from(upgrades.used_galaxy_pearl);
+    data[base + 42 + upgrade_shift] = u8::from(upgrades.used_gummy_worm);
+    data[base + 43 + upgrade_shift] = u8::from(upgrades.used_ambrosia);
+    data[base + 44 + upgrade_shift] = u8::from(upgrades.downed_dd2_event);
+    data[base + 45 + upgrade_shift..base + 49 + upgrade_shift]
         .copy_from_slice(&character.counters.tax_money.to_le_bytes());
-    data[base + 50 + post_bread_shift..base + 54 + post_bread_shift]
+    data[base + 49 + upgrade_shift..base + 53 + upgrade_shift]
         .copy_from_slice(&character.counters.pve_deaths.to_le_bytes());
-    data[base + 54 + post_bread_shift..base + 58 + post_bread_shift]
+    data[base + 53 + upgrade_shift..base + 57 + upgrade_shift]
         .copy_from_slice(&character.counters.pvp_deaths.to_le_bytes());
 
     for (offset, color) in [
@@ -1111,11 +1232,15 @@ fn write_character(
     .into_iter()
     .enumerate()
     {
-        write_color(data, base + 58 + post_bread_shift + offset * 3, color);
+        write_color(data, base + 57 + upgrade_shift + offset * 3, color);
     }
-    data[layout.voice_variant] = character.appearance.voice_variant;
-    data[layout.voice_pitch..layout.voice_pitch + 4]
-        .copy_from_slice(&character.appearance.voice_pitch.to_le_bytes());
+    if let Some(voice_variant) = layout.voice_variant {
+        data[voice_variant] = character.appearance.voice_variant;
+    }
+    if let Some(voice_pitch) = layout.voice_pitch {
+        data[voice_pitch..voice_pitch + 4]
+            .copy_from_slice(&character.appearance.voice_pitch.to_le_bytes());
+    }
     Ok(())
 }
 
@@ -1213,7 +1338,7 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
     cursor = checked_advance(data, cursor, 8 + 4)?;
 
     let research = cursor;
-    cursor = checked_advance(data, cursor, 1)?;
+    cursor = checked_advance(data, cursor, format.research_prefix_size())?;
     let sacrifice_count = read_i32(data, cursor)?;
     cursor += 4;
     if !(0..=20_000).contains(&sacrifice_count) {
@@ -1262,9 +1387,21 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
     let current_loadout_index = cursor;
     cursor = checked_advance(data, cursor, 4)?;
     let loadouts = cursor;
-    let voice_variant = checked_advance(data, loadouts, LOADOUT_RECORDS * format.loadout_size())?;
-    let voice_pitch = checked_advance(data, voice_variant, 1)?;
-    checked_advance(data, voice_pitch, 4)?;
+    cursor = checked_advance(data, loadouts, LOADOUT_RECORDS * format.loadout_size())?;
+    let voice_variant = if format.voice_variant {
+        let offset = cursor;
+        cursor = checked_advance(data, cursor, 1)?;
+        Some(offset)
+    } else {
+        None
+    };
+    let voice_pitch = if format.voice_pitch {
+        let offset = cursor;
+        checked_advance(data, cursor, 4)?;
+        Some(offset)
+    } else {
+        None
+    };
 
     Ok(Layout {
         format,
@@ -1290,8 +1427,9 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
 }
 
 fn read_active_loadout(data: &[u8], layout: Layout) -> Result<EquipmentLoadout, SaveError> {
-    let first_flags = read_u8(data, layout.name_end + 15)?;
-    let second_flags = read_u8(data, layout.name_end + 16)?;
+    let team_shift = layout.format.team_shift();
+    let first_flags = read_u8(data, layout.name_end + 14 + team_shift)?;
+    let second_flags = read_u8(data, layout.name_end + 15 + team_shift)?;
     let hidden = (0..DYE_RECORDS)
         .map(|index| {
             if index < 8 {
@@ -1401,8 +1539,9 @@ fn write_active_loadout(data: &mut [u8], layout: Layout, loadout: &EquipmentLoad
         let offset = layout.dyes + item.slot as usize * layout.format.equipment_record_size;
         write_equipment_item(data, offset, item, layout.format);
     }
+    let team_shift = layout.format.team_shift();
     let mut first_flags = 0u8;
-    let mut second_flags = data[layout.name_end + 16] & !0b11;
+    let mut second_flags = data[layout.name_end + 15 + team_shift] & !0b11;
     for (index, hidden) in loadout.hidden.iter().copied().enumerate() {
         if hidden {
             if index < 8 {
@@ -1412,8 +1551,8 @@ fn write_active_loadout(data: &mut [u8], layout: Layout, loadout: &EquipmentLoad
             }
         }
     }
-    data[layout.name_end + 15] = first_flags;
-    data[layout.name_end + 16] = second_flags;
+    data[layout.name_end + 14 + team_shift] = first_flags;
+    data[layout.name_end + 15 + team_shift] = second_flags;
 }
 
 fn write_serialized_loadout(
@@ -1594,10 +1733,15 @@ mod tests {
         let name_end = 25 + name.len();
         data[name_end] = 1;
         data[name_end + 9..name_end + 13].copy_from_slice(&17i32.to_le_bytes());
-        data[name_end + 19..name_end + 23].copy_from_slice(&400i32.to_le_bytes());
-        data[name_end + 23..name_end + 27].copy_from_slice(&500i32.to_le_bytes());
-        data[name_end + 27..name_end + 31].copy_from_slice(&180i32.to_le_bytes());
-        data[name_end + 31..name_end + 35].copy_from_slice(&200i32.to_le_bytes());
+        let team_shift = format.team_shift();
+        data[name_end + 18 + team_shift..name_end + 22 + team_shift]
+            .copy_from_slice(&400i32.to_le_bytes());
+        data[name_end + 22 + team_shift..name_end + 26 + team_shift]
+            .copy_from_slice(&500i32.to_le_bytes());
+        data[name_end + 26 + team_shift..name_end + 30 + team_shift]
+            .copy_from_slice(&180i32.to_le_bytes());
+        data[name_end + 30 + team_shift..name_end + 34 + team_shift]
+            .copy_from_slice(&200i32.to_le_bytes());
 
         let bank4 = name_end
             + format.header_after_name
@@ -1610,7 +1754,9 @@ mod tests {
             bank4 + BANK_RECORDS * INVENTORY_RECORD_SIZE + 1 + BUFF_RECORDS * BUFF_RECORD_SIZE;
         data[spawn_sentinel..spawn_sentinel + 4].copy_from_slice(&(-1i32).to_le_bytes());
         let layout = locate_layout(&data).unwrap();
-        data[layout.voice_variant] = 1;
+        if let Some(voice_variant) = layout.voice_variant {
+            data[voice_variant] = 1;
+        }
         data
     }
 
@@ -1681,6 +1827,79 @@ mod tests {
         .unwrap_err()
         .to_string()
         .contains("cannot store favorites"));
+    }
+
+    #[test]
+    fn v279_codec_omits_team_research_marker_and_voice_fields() {
+        let data = synthetic_player_for("Bruv", Format::V279);
+        let before = parse_v279(Path::new("fixture.plr"), "hash", &data).unwrap();
+        assert_eq!(before.character.appearance.team, 0);
+        assert_eq!(before.character.appearance.voice_variant, 1);
+        assert_eq!(before.character.appearance.voice_pitch, 0.0);
+
+        let unchanged = patch_document_v279(
+            &data,
+            PatchDocument {
+                character: &before.character,
+                effects: &before.effects,
+                journey: &before.journey,
+                spawn_points: &before.spawn_points,
+                inventory: &before.inventory,
+                equipment: &before.equipment,
+                storage: &before.storage,
+            },
+        )
+        .unwrap();
+        assert_eq!(unchanged, data);
+
+        let mut character = before.character.clone();
+        character.name = "Forge279".into();
+        character.appearance.skin_variant = 5;
+        character.appearance.voice_variant = 2;
+        let mut journey = before.journey.clone();
+        journey.research.push(ResearchEntry {
+            persistent_id: "MagicLantern".into(),
+            count: 1,
+        });
+        let mut equipment = before.equipment.clone();
+        equipment.loadouts[0].armor[0] = ItemSlot {
+            slot: 0,
+            item_id: 90,
+            stack: 1,
+            prefix: 0,
+            favorited: false,
+        };
+        let patched = patch_document_v279(
+            &data,
+            PatchDocument {
+                character: &character,
+                effects: &before.effects,
+                journey: &journey,
+                spawn_points: &before.spawn_points,
+                inventory: &before.inventory,
+                equipment: &equipment,
+                storage: &before.storage,
+            },
+        )
+        .unwrap();
+        let after = parse_v279(Path::new("fixture.plr"), "hash", &patched).unwrap();
+        assert_eq!(after.character, character);
+        assert_eq!(after.journey, journey);
+        assert_eq!(after.equipment, equipment);
+
+        character.appearance.team = 1;
+        assert!(validate_document_v279(
+            &character,
+            &before.effects,
+            &journey,
+            &before.spawn_points,
+            &before.inventory,
+            &equipment,
+            &before.storage,
+        )
+        .unwrap_err()
+        .to_string()
+        .contains("cannot store a team"));
     }
 
     #[test]
@@ -1928,14 +2147,14 @@ mod tests {
         let document = parse(Path::new("fixture.plr"), "hash", &data).unwrap();
         let mut character = document.character.clone();
         character.appearance.hair = 228;
-        assert!(validate_character(&character)
+        assert!(validate_character(&character, Format::V325)
             .unwrap_err()
             .to_string()
             .contains("hair style"));
 
         character = document.character;
         character.stats.life_max = 501;
-        assert!(validate_character(&character)
+        assert!(validate_character(&character, Format::V325)
             .unwrap_err()
             .to_string()
             .contains("maximum health"));
@@ -1984,8 +2203,9 @@ mod tests {
             let header = (original_layout.name_end..original_layout.name_end + 15).contains(&index)
                 || (original_layout.name_end + 18..original_layout.name_end + HEADER_AFTER_NAME)
                     .contains(&index);
-            let voice =
-                (original_layout.voice_variant..original_layout.voice_pitch + 4).contains(&index);
+            let voice = (original_layout.voice_variant.unwrap()
+                ..original_layout.voice_pitch.unwrap() + 4)
+                .contains(&index);
             if data[index] != patched[index] {
                 assert!(
                     name || header || voice,
@@ -1999,7 +2219,7 @@ mod tests {
     fn patches_effects_spawns_research_and_journey_powers_without_losing_tail() {
         let mut data = synthetic_player("NewBruv");
         let original_layout = locate_layout(&data).unwrap();
-        let tail_marker = original_layout.voice_pitch + 4;
+        let tail_marker = original_layout.voice_pitch.unwrap() + 4;
         data[tail_marker..tail_marker + 4].copy_from_slice(&0x1234_5678u32.to_le_bytes());
         let before = parse(Path::new("fixture.plr"), "hash", &data).unwrap();
 
@@ -2063,7 +2283,7 @@ mod tests {
         assert_eq!(after.inventory, before.inventory);
         let new_layout = locate_layout(&patched).unwrap();
         assert_eq!(
-            &patched[new_layout.voice_pitch + 4..new_layout.voice_pitch + 8],
+            &patched[new_layout.voice_pitch.unwrap() + 4..new_layout.voice_pitch.unwrap() + 8],
             &0x1234_5678u32.to_le_bytes()
         );
     }

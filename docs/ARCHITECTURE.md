@@ -9,14 +9,14 @@ React editor state
 Tauri command boundary
       │ validated domain operations
       ▼
-version registry → v325 codec → AES-CBC envelope → guarded filesystem transaction
+version registry → verified format codec → AES-CBC envelope → guarded filesystem transaction
 ```
 
 The webview never receives encryption keys or raw decrypted payloads. It receives a normalized `PlayerDocument`, sends complete validated character, inventory, equipment, storage, effects, Journey, and spawn-point snapshots on save, and includes the source hash to prevent overwriting an externally changed file.
 
 ## Save engine
 
-The current v325 codec is intentionally bytes-preserving. It maps the complete serialized character header, fixed inventory/equipment/storage and 44-record buff blocks, then traverses variable-length spawn, research, Journey-power, loadout, and voice regions. Serialization splices only supported variable records and patches supported fixed records, relocating every dependent offset after each splice so untouched tail bytes remain exact. Variable-length .NET strings are safely re-encoded. Unknown Journey power payloads fail closed before a write is attempted.
+The current v279/v317/v325 codec family is intentionally bytes-preserving. A format descriptor models version-gated team, equipment-favorite, research-marker, and voice fields while sharing the verified inventory, storage, buff, spawn, Journey, and loadout machinery. Serialization splices only supported variable records and patches supported fixed records, relocating every dependent offset after each splice so untouched tail bytes remain exact. Variable-length .NET strings are safely re-encoded. Unknown Journey power payloads fail closed before a write is attempted.
 
 Journey world powers are deliberately absent from the player domain: time, weather, and world-difficulty controls are world-file state. Player files serialize only Godmode (ID 5), extended placement range (ID 11), and the enemy spawn-rate slider (ID 14). The codec preserves which supported records were present and adds one only when that power is edited.
 

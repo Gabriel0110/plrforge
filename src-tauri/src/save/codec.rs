@@ -5,7 +5,7 @@ use std::path::Path;
 const LOWEST_TERRARIA_VERSION: i32 = 1;
 const LATEST_VERIFIED_VERSION: i32 = 325;
 #[cfg(test)]
-const VERIFIED_VERSIONS: [i32; 2] = [317, 325];
+const VERIFIED_VERSIONS: [i32; 3] = [279, 317, 325];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -27,6 +27,7 @@ pub struct PlayerCompatibility {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Codec {
+    V279,
     V317,
     V325,
 }
@@ -37,10 +38,14 @@ pub fn inspect_plaintext(data: &[u8]) -> Result<PlayerCompatibility, SaveError> 
 
 pub fn classify_version(version: i32) -> PlayerCompatibility {
     match version {
-        317 | LATEST_VERIFIED_VERSION => PlayerCompatibility {
+        279 | 317 | LATEST_VERIFIED_VERSION => PlayerCompatibility {
             state: CompatibilityState::Supported,
             file_version: version,
-            format_label: format!("Terraria 1.4.5.x / player v{version}"),
+            format_label: if version == 279 {
+                "Terraria 1.4.4.x / player v279".into()
+            } else {
+                format!("Terraria 1.4.5.x / player v{version}")
+            },
             can_edit: true,
             message: format!(
                 "Player v{version} is covered by its PlrForge codec, real-file mutation tests, and guarded save verification."
@@ -79,6 +84,7 @@ pub fn classify_version(version: i32) -> PlayerCompatibility {
 pub(super) fn codec_for_plaintext(data: &[u8]) -> Result<Codec, SaveError> {
     let version = read_version(data)?;
     match version {
+        279 => Ok(Codec::V279),
         317 => Ok(Codec::V317),
         LATEST_VERIFIED_VERSION => Ok(Codec::V325),
         _ => Err(SaveError::UnsupportedVersion(version)),
@@ -101,6 +107,7 @@ impl Codec {
         data: &[u8],
     ) -> Result<PlayerDocument, SaveError> {
         match self {
+            Self::V279 => v325::parse_v279(path, source_hash, data),
             Self::V317 => v325::parse_v317(path, source_hash, data),
             Self::V325 => v325::parse(path, source_hash, data),
         }
@@ -108,6 +115,15 @@ impl Codec {
 
     pub(super) fn validate(self, request: &SavePlayerRequest) -> Result<(), SaveError> {
         match self {
+            Self::V279 => v325::validate_document_v279(
+                &request.character,
+                &request.effects,
+                &request.journey,
+                &request.spawn_points,
+                &request.inventory,
+                &request.equipment,
+                &request.storage,
+            ),
             Self::V317 => v325::validate_document_v317(
                 &request.character,
                 &request.effects,
@@ -135,6 +151,18 @@ impl Codec {
         request: &SavePlayerRequest,
     ) -> Result<Vec<u8>, SaveError> {
         match self {
+            Self::V279 => v325::patch_document_v279(
+                data,
+                v325::PatchDocument {
+                    character: &request.character,
+                    effects: &request.effects,
+                    journey: &request.journey,
+                    spawn_points: &request.spawn_points,
+                    inventory: &request.inventory,
+                    equipment: &request.equipment,
+                    storage: &request.storage,
+                },
+            ),
             Self::V317 => v325::patch_document_v317(
                 data,
                 v325::PatchDocument {
@@ -184,7 +212,7 @@ mod tests {
             assert!(supported.can_edit);
         }
 
-        let historical = classify_version(279);
+        let historical = classify_version(278);
         assert_eq!(historical.state, CompatibilityState::Untested);
         assert!(!historical.can_edit);
         assert!(historical.message.contains("golden-fixture"));
@@ -197,6 +225,10 @@ mod tests {
 
     #[test]
     fn refuses_to_select_a_codec_for_unverified_versions() {
+        assert_eq!(
+            codec_for_plaintext(&279i32.to_le_bytes()).unwrap(),
+            Codec::V279
+        );
         assert_eq!(
             codec_for_plaintext(&317i32.to_le_bytes()).unwrap(),
             Codec::V317
