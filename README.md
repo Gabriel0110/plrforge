@@ -46,7 +46,7 @@ The **Backups** workspace lists only the active character's verified backups. Re
 
 ## Release checks
 
-The **Settings** workspace contains a manual **Check now** action and an opt-in “check automatically on launch” preference. Official GitHub Actions builds compile their source repository into the app via `PLRFORGE_GITHUB_REPOSITORY=${{ github.repository }}`. The app asks GitHub's public `releases/latest` endpoint for metadata, compares semantic versions, and can open the matching release page. It does not download or install code. Local builds without a configured repository report that update checks are unavailable instead of guessing a feed.
+The app header and **Settings** workspace both provide a manual update check, while Settings also contains an opt-in “check automatically on launch” preference. Official GitHub Actions builds compile their source repository into the app via `PLRFORGE_GITHUB_REPOSITORY=${{ github.repository }}`. The app asks GitHub's public `releases/latest` endpoint for metadata, compares semantic versions, and can open the matching release page. It does not download or install code. Local builds without a configured repository report that update checks are unavailable instead of guessing a feed.
 
 To configure a local or third-party build:
 
