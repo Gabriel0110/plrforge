@@ -32,6 +32,7 @@ import { LoadingState } from "./components/LoadingState";
 import { StoragePanel } from "./components/StoragePanel";
 import { SpawnPointsPanel } from "./components/SpawnPointsPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { UpdateNotice } from "./components/UpdateNotice";
 import { acceptsItem, findItem, itemName } from "./data/catalog";
 import { demoPlayer } from "./lib/demo";
 import {
@@ -53,6 +54,7 @@ import {
   discoverPlayers,
   isDesktop,
   loadPlayer,
+  openReleasePage,
   savePlayer,
   type RestoreReceipt,
   type UpdateStatus,
@@ -207,6 +209,7 @@ export default function App() {
   const [version, setVersion] = useState("0.1.0");
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const [showUpdateNotice, setShowUpdateNotice] = useState(false);
   const [automaticUpdateChecks, setAutomaticUpdateChecks] = useState(() => localStorage.getItem("plrforge.autoUpdateChecks") === "true");
   const [editor, dispatch] = useReducer(editorReducer, editableDocument(player ?? demoPlayer), initialEditorState);
 
@@ -244,6 +247,7 @@ export default function App() {
   }, []);
 
   const runUpdateCheck = useCallback(async () => {
+    setShowUpdateNotice(true);
     setCheckingUpdates(true);
     try {
       setUpdateStatus(await checkForUpdates());
@@ -262,6 +266,20 @@ export default function App() {
       setCheckingUpdates(false);
     }
   }, []);
+
+  const viewRelease = async () => {
+    if (!updateStatus?.releaseUrl) return;
+    try {
+      await openReleasePage(updateStatus.releaseUrl);
+    } catch (reason) {
+      setUpdateStatus({
+        ...updateStatus,
+        state: "error",
+        message: `The release page could not be opened: ${reason instanceof Error ? reason.message : String(reason)}`,
+      });
+      setShowUpdateNotice(true);
+    }
+  };
 
   useEffect(() => {
     if (desktop && automaticUpdateChecks) void runUpdateCheck();
@@ -419,6 +437,15 @@ export default function App() {
         <div className="flex w-[192px] items-center gap-2.5"><span aria-hidden="true" className="logo-mark"><span /><span /><span /></span><span className="text-[15px] font-semibold tracking-[-0.035em] text-white/92">PlrForge</span></div>
         {currentPlayer ? <><div className="flex min-w-0 items-center gap-3 border-l border-white/10 pl-4"><div className="min-w-0"><p className="truncate text-[12px] font-semibold text-white/84">{currentPlayer.character.name}</p><p className="font-mono text-[9px] text-white/30">File version {currentPlayer.version}</p></div><span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.055] px-2 py-1 text-[10px] text-emerald-200/75 xl:flex"><span className="size-1.5 rounded-full bg-emerald-400" />Safe to edit</span></div><div className="ml-auto flex items-center gap-1.5"><AssetStatusButton /><HeaderUpdateButton status={updateStatus} checking={checkingUpdates} onCheck={runUpdateCheck} /><button type="button" onClick={() => dispatch({ type: "undo" })} disabled={!editor.past.length} aria-label="Undo" className="toolbar-button"><ArrowCounterClockwise className="size-4" /></button><button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!editor.future.length} aria-label="Redo" className="toolbar-button"><ArrowUUpRight className="size-4" /></button>{desktop && <button type="button" onClick={openPlayer} className="toolbar-button ml-1 gap-2 px-3"><FolderOpen className="size-4" /><span className="hidden xl:inline">Open</span></button>}<button type="button" onClick={save} disabled={saving || editor.changes.length === 0} className="ml-2 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500 px-3.5 text-[12px] font-semibold text-[#07110d] transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/[0.07] disabled:text-white/26">{saving ? <span className="size-3.5 animate-pulse rounded bg-current/50" /> : <Check weight="bold" className="size-4" />}{saving ? "Verifying" : "Save changes"}</button></div></> : <><p className="text-xs text-white/30">No player open</p><div className="ml-auto flex items-center gap-1.5"><AssetStatusButton /><HeaderUpdateButton status={updateStatus} checking={checkingUpdates} onCheck={runUpdateCheck} /></div></>}
       </header>
+
+      {showUpdateNotice && (
+        <UpdateNotice
+          status={updateStatus}
+          checking={checkingUpdates}
+          onDismiss={() => setShowUpdateNotice(false)}
+          onViewRelease={viewRelease}
+        />
+      )}
 
       {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} onOpen={openPlayer} onLoad={loadPath} /> : loadState === "error" ? <main className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : (
         <div className="grid min-h-0 flex-1 grid-cols-[208px_minmax(0,1fr)]">
