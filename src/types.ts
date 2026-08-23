@@ -82,11 +82,46 @@ export type CharacterDocument = {
   counters: CharacterCounters;
 };
 
+export type BuffSlot = {
+  slot: number;
+  buffId: number;
+  time: number;
+};
+
+export type EffectsDocument = { buffs: BuffSlot[] };
+
+export type SpawnPoint = {
+  x: number;
+  y: number;
+  worldId: number;
+  worldName: string;
+};
+
+export type ResearchEntry = {
+  persistentId: string;
+  count: number;
+};
+
+export type JourneyDocument = {
+  research: ResearchEntry[];
+  powers: {
+    godmode: boolean;
+    farPlacementRange: boolean;
+    spawnRate: number;
+  };
+  serializedPowerIds: number[];
+  unlockedSuperCart: boolean;
+  enabledSuperCart: boolean;
+};
+
 export type PlayerDocument = {
   path: string;
   sourceHash: string;
   version: number;
   character: CharacterDocument;
+  effects: EffectsDocument;
+  journey: JourneyDocument;
+  spawnPoints: SpawnPoint[];
   inventory: InventoryItem[];
   equipment: EquipmentDocument;
   storage: StorageDocument;
@@ -132,6 +167,9 @@ export type ChangeEntry = {
 
 export type EditorSnapshot = {
   character: CharacterDocument;
+  effects: EffectsDocument;
+  journey: JourneyDocument;
+  spawnPoints: SpawnPoint[];
   inventory: InventoryItem[];
   equipment: EquipmentDocument;
   storage: StorageDocument;

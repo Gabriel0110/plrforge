@@ -60,14 +60,15 @@ Global command search finds both actions and items. An item can be added to the 
 
 The codec and editing work is complete. Local item-icon extraction remains an optional visual enhancement; the built-in no-assets glyph fallback is production-safe.
 
-### Phase 3 — character systems (in progress)
+### Phase 3 — character systems (implemented)
 
 - Identity, appearance colors, voice settings, difficulty, health/mana, permanent consumable upgrades, play time, tax savings, and death counters are implemented.
-- Buff editing and spawn-point editing remain to be implemented.
-- Journey research tracker and bulk research actions.
-- Validation rules mirrored from the matching game version.
+- All 44 saved buff slots, exact durations, and v325 buff-ID validation.
+- Named spawn-point records with exact world IDs, names, and tile coordinates.
+- Journey research tracker, individual/bulk completion, all three per-player powers, and independent Super Cart flags.
+- Validation and serialization rules traced to the matching v325 game assembly, with unknown Journey power payloads rejected before writing.
 
-### Phase 4 — compatibility and release
+### Phase 4 — compatibility and release (next)
 
 - Golden fixtures for supported historical formats, beginning with 1.4.4 and 1.4.5.
 - Unsigned preview builds, then Apple notarization and Windows code signing.

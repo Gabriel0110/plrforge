@@ -44,4 +44,25 @@ describe("editor history", () => {
     expect(changed.character.name).toBe("Forged Hero");
     expect(editorReducer(changed, { type: "undo" }).character.name).toBe("NewBruv");
   });
+
+  it("keeps effects, Journey data, and spawn points in the same history", () => {
+    const document = editableDocument(demoPlayer);
+    const changed = editorReducer(initialEditorState(document), {
+      type: "change",
+      document: {
+        ...document,
+        effects: { buffs: document.effects.buffs.map((buff) => buff.slot === 0 ? { ...buff, buffId: 5, time: 3600 } : buff) },
+        journey: { ...document.journey, powers: { ...document.journey.powers, godmode: true } },
+        spawnPoints: [...document.spawnPoints, { x: 1, y: 2, worldId: 3, worldName: "Test" }],
+      },
+      entry: { id: "systems", location: "Character systems", description: "Systems changed" },
+    });
+    expect(changed.effects.buffs[0].buffId).toBe(5);
+    expect(changed.journey.powers.godmode).toBe(true);
+    expect(changed.spawnPoints).toHaveLength(2);
+    const undone = editorReducer(changed, { type: "undo" });
+    expect(undone.effects.buffs[0].buffId).toBe(0);
+    expect(undone.journey.powers.godmode).toBe(false);
+    expect(undone.spawnPoints).toHaveLength(1);
+  });
 });

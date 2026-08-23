@@ -26,6 +26,9 @@ pub struct PlayerDocument {
     pub source_hash: String,
     pub version: i32,
     pub character: CharacterDocument,
+    pub effects: EffectsDocument,
+    pub journey: JourneyDocument,
+    pub spawn_points: Vec<SpawnPoint>,
     pub inventory: Vec<ItemSlot>,
     pub equipment: EquipmentDocument,
     pub storage: StorageDocument,
@@ -104,6 +107,54 @@ pub struct CharacterCounters {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+pub struct EffectsDocument {
+    pub buffs: Vec<BuffSlot>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct BuffSlot {
+    pub slot: u8,
+    pub buff_id: i32,
+    pub time: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct SpawnPoint {
+    pub x: i32,
+    pub y: i32,
+    pub world_id: i32,
+    pub world_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct JourneyDocument {
+    pub research: Vec<ResearchEntry>,
+    pub powers: JourneyPowers,
+    pub serialized_power_ids: Vec<u16>,
+    pub unlocked_super_cart: bool,
+    pub enabled_super_cart: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ResearchEntry {
+    pub persistent_id: String,
+    pub count: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct JourneyPowers {
+    pub godmode: bool,
+    pub far_placement_range: bool,
+    pub spawn_rate: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct ItemSlot {
     pub slot: u8,
     pub item_id: i32,
@@ -147,6 +198,14 @@ struct Layout {
     inventory: usize,
     misc: usize,
     banks: [usize; 4],
+    buffs: usize,
+    spawn_points: usize,
+    spawn_points_end: usize,
+    research: usize,
+    research_end: usize,
+    powers: usize,
+    powers_end: usize,
+    super_cart: usize,
     current_loadout_index: usize,
     loadouts: usize,
     voice_variant: usize,
@@ -231,6 +290,8 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
     let misc_hidden = (0..MISC_RECORDS)
         .map(|index| misc_flags & (1 << index) != 0)
         .collect();
+    let super_cart = read_u8(data, layout.super_cart)?;
+    let (journey_powers, serialized_power_ids) = read_journey_powers(data, layout.powers)?;
 
     Ok(PlayerDocument {
         path: path.to_string_lossy().into_owned(),
@@ -266,6 +327,15 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
                 pvp_deaths: read_i32(data, header + 55)?,
             },
         },
+        effects: read_effects(data, layout.buffs)?,
+        journey: JourneyDocument {
+            research: read_research(data, layout.research)?,
+            powers: journey_powers,
+            serialized_power_ids,
+            unlocked_super_cart: super_cart & 1 != 0,
+            enabled_super_cart: super_cart & 2 != 0,
+        },
+        spawn_points: read_spawn_points(data, layout.spawn_points)?,
         inventory,
         equipment: EquipmentDocument {
             current_loadout_index: current_loadout_index as u8,
@@ -295,13 +365,118 @@ pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocume
     })
 }
 
+fn read_effects(data: &[u8], base: usize) -> Result<EffectsDocument, SaveError> {
+    let buffs = (0..BUFF_RECORDS)
+        .map(|slot| {
+            let offset = base + slot * BUFF_RECORD_SIZE;
+            Ok(BuffSlot {
+                slot: slot as u8,
+                buff_id: read_i32(data, offset)?,
+                time: read_i32(data, offset + 4)?,
+            })
+        })
+        .collect::<Result<Vec<_>, SaveError>>()?;
+    Ok(EffectsDocument { buffs })
+}
+
+fn read_spawn_points(data: &[u8], mut cursor: usize) -> Result<Vec<SpawnPoint>, SaveError> {
+    let mut points = Vec::new();
+    for _ in 0..200 {
+        let x = read_i32(data, cursor)?;
+        cursor += 4;
+        if x == -1 {
+            return Ok(points);
+        }
+        let y = read_i32(data, cursor)?;
+        let world_id = read_i32(data, cursor + 4)?;
+        let (world_name, end) = read_dotnet_string(data, cursor + 8)?;
+        points.push(SpawnPoint {
+            x,
+            y,
+            world_id,
+            world_name,
+        });
+        cursor = end;
+    }
+    Err(SaveError::Validation(
+        "spawn-point list has no v325 terminator".into(),
+    ))
+}
+
+fn read_research(data: &[u8], base: usize) -> Result<Vec<ResearchEntry>, SaveError> {
+    let count = read_i32(data, base + 1)?;
+    if !(0..=20_000).contains(&count) {
+        return Err(SaveError::Validation(format!(
+            "creative research entry count {count} is not credible"
+        )));
+    }
+    let mut cursor = base + 5;
+    let mut entries = Vec::with_capacity(count as usize);
+    for _ in 0..count {
+        let (persistent_id, end) = read_dotnet_string(data, cursor)?;
+        let value = read_i32(data, end)?;
+        entries.push(ResearchEntry {
+            persistent_id,
+            count: value,
+        });
+        cursor = end + 4;
+    }
+    Ok(entries)
+}
+
+fn read_journey_powers(
+    data: &[u8],
+    mut cursor: usize,
+) -> Result<(JourneyPowers, Vec<u16>), SaveError> {
+    let mut powers = JourneyPowers {
+        godmode: false,
+        far_placement_range: true,
+        spawn_rate: 0.5,
+    };
+    let mut serialized_ids = Vec::new();
+    loop {
+        if !read_bool(data, cursor)? {
+            return Ok((powers, serialized_ids));
+        }
+        cursor += 1;
+        let power_id = read_u16(data, cursor)?;
+        cursor += 2;
+        serialized_ids.push(power_id);
+        match power_id {
+            5 => {
+                powers.godmode = read_bool(data, cursor)?;
+                cursor += 1;
+            }
+            11 => {
+                powers.far_placement_range = read_bool(data, cursor)?;
+                cursor += 1;
+            }
+            14 => {
+                powers.spawn_rate = read_f32(data, cursor)?;
+                cursor += 4;
+            }
+            _ => {
+                return Err(SaveError::Validation(format!(
+                    "Journey power ID {power_id} has an unknown v325 payload"
+                )))
+            }
+        }
+    }
+}
+
 pub fn validate_document(
     character: &CharacterDocument,
+    effects: &EffectsDocument,
+    journey: &JourneyDocument,
+    spawn_points: &[SpawnPoint],
     inventory: &[ItemSlot],
     equipment: &EquipmentDocument,
     storage: &StorageDocument,
 ) -> Result<(), SaveError> {
     validate_character(character)?;
+    validate_effects(effects)?;
+    validate_journey(journey)?;
+    validate_spawn_points(spawn_points)?;
     validate_slots(
         inventory,
         INVENTORY_RECORDS,
@@ -378,14 +553,38 @@ pub fn validate_document(
     Ok(())
 }
 
-pub fn patch_document(
+pub(super) struct PatchDocument<'a> {
+    pub character: &'a CharacterDocument,
+    pub effects: &'a EffectsDocument,
+    pub journey: &'a JourneyDocument,
+    pub spawn_points: &'a [SpawnPoint],
+    pub inventory: &'a [ItemSlot],
+    pub equipment: &'a EquipmentDocument,
+    pub storage: &'a StorageDocument,
+}
+
+pub(super) fn patch_document(
     data: &[u8],
-    character: &CharacterDocument,
-    inventory: &[ItemSlot],
-    equipment: &EquipmentDocument,
-    storage: &StorageDocument,
+    document: PatchDocument<'_>,
 ) -> Result<Vec<u8>, SaveError> {
-    validate_document(character, inventory, equipment, storage)?;
+    let PatchDocument {
+        character,
+        effects,
+        journey,
+        spawn_points,
+        inventory,
+        equipment,
+        storage,
+    } = document;
+    validate_document(
+        character,
+        effects,
+        journey,
+        spawn_points,
+        inventory,
+        equipment,
+        storage,
+    )?;
     let original_layout = locate_layout(data)?;
     let original_index = read_i32(data, original_layout.current_loadout_index)?;
     if original_index != equipment.current_loadout_index as i32 {
@@ -397,7 +596,27 @@ pub fn patch_document(
     let mut patched = data.to_vec();
     let encoded_name = encode_dotnet_string(&character.name);
     patched.splice(METADATA_END..original_layout.name_end, encoded_name);
-    let layout = locate_layout(&patched)?;
+    let mut layout = locate_layout(&patched)?;
+    write_effects(&mut patched, layout.buffs, effects);
+    patched.splice(
+        layout.spawn_points..layout.spawn_points_end,
+        encode_spawn_points(spawn_points),
+    );
+    layout = locate_layout(&patched)?;
+    patched.splice(
+        layout.research..layout.research_end,
+        encode_research(&journey.research),
+    );
+    layout = locate_layout(&patched)?;
+    patched.splice(
+        layout.powers..layout.powers_end,
+        encode_journey_powers(&journey.powers, &journey.serialized_power_ids),
+    );
+    layout = locate_layout(&patched)?;
+    let mut super_cart = patched[layout.super_cart] & !0b11;
+    super_cart |= u8::from(journey.unlocked_super_cart);
+    super_cart |= u8::from(journey.enabled_super_cart) << 1;
+    patched[layout.super_cart] = super_cart;
     write_character(&mut patched, layout, character)?;
     write_slots(
         &mut patched,
@@ -544,6 +763,154 @@ fn validate_character(character: &CharacterDocument) -> Result<(), SaveError> {
     Ok(())
 }
 
+fn validate_effects(effects: &EffectsDocument) -> Result<(), SaveError> {
+    if effects.buffs.len() != BUFF_RECORDS {
+        return Err(SaveError::Validation(format!(
+            "saved effects must contain exactly {BUFF_RECORDS} slots"
+        )));
+    }
+    for (index, buff) in effects.buffs.iter().enumerate() {
+        if buff.slot as usize != index {
+            return Err(SaveError::Validation(format!(
+                "saved effect slots are out of order at position {index}"
+            )));
+        }
+        if !(0..=400).contains(&buff.buff_id) {
+            return Err(SaveError::Validation(format!(
+                "saved effect slot {} has invalid buff ID {} for Terraria v325",
+                index + 1,
+                buff.buff_id
+            )));
+        }
+        let valid_time = if buff.buff_id == 0 {
+            buff.time == 0
+        } else {
+            buff.time > 0
+        };
+        if !valid_time {
+            return Err(SaveError::Validation(format!(
+                "saved effect slot {} has invalid duration {}",
+                index + 1,
+                buff.time
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn validate_spawn_points(points: &[SpawnPoint]) -> Result<(), SaveError> {
+    if points.len() > 199 {
+        return Err(SaveError::Validation(
+            "Terraria v325 supports at most 199 saved spawn points plus its terminator".into(),
+        ));
+    }
+    for (index, point) in points.iter().enumerate() {
+        if point.x == -1 {
+            return Err(SaveError::Validation(format!(
+                "spawn point {} uses Terraria's reserved terminator coordinate",
+                index + 1
+            )));
+        }
+        if point.world_name.trim().is_empty() || point.world_name.len() > 1024 {
+            return Err(SaveError::Validation(format!(
+                "spawn point {} must have a world name no longer than 1024 UTF-8 bytes",
+                index + 1
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn validate_journey(journey: &JourneyDocument) -> Result<(), SaveError> {
+    if journey.research.len() > 20_000 {
+        return Err(SaveError::Validation(
+            "Journey research contains more than 20,000 entries".into(),
+        ));
+    }
+    let mut ids = std::collections::HashSet::new();
+    for entry in &journey.research {
+        if entry.persistent_id.trim().is_empty() || entry.persistent_id.len() > 256 {
+            return Err(SaveError::Validation(
+                "Journey research keys must contain 1 to 256 UTF-8 bytes".into(),
+            ));
+        }
+        if !ids.insert(&entry.persistent_id) {
+            return Err(SaveError::Validation(format!(
+                "Journey research key {} appears more than once",
+                entry.persistent_id
+            )));
+        }
+        if !(0..=9999).contains(&entry.count) {
+            return Err(SaveError::Validation(format!(
+                "Journey research count for {} must be between 0 and 9999",
+                entry.persistent_id
+            )));
+        }
+    }
+    if !journey.powers.spawn_rate.is_finite() || !(0.0..=1.0).contains(&journey.powers.spawn_rate) {
+        return Err(SaveError::Validation(
+            "Journey enemy spawn-rate slider must be from 0.0 to 1.0".into(),
+        ));
+    }
+    let mut power_ids = std::collections::HashSet::new();
+    for power_id in &journey.serialized_power_ids {
+        if !matches!(power_id, 5 | 11 | 14) || !power_ids.insert(power_id) {
+            return Err(SaveError::Validation(
+                "Journey power records must contain unique supported IDs 5, 11, or 14".into(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn write_effects(data: &mut [u8], base: usize, effects: &EffectsDocument) {
+    for buff in &effects.buffs {
+        let offset = base + buff.slot as usize * BUFF_RECORD_SIZE;
+        data[offset..offset + 4].copy_from_slice(&buff.buff_id.to_le_bytes());
+        data[offset + 4..offset + 8].copy_from_slice(&buff.time.to_le_bytes());
+    }
+}
+
+fn encode_spawn_points(points: &[SpawnPoint]) -> Vec<u8> {
+    let mut encoded = Vec::new();
+    for point in points {
+        encoded.extend_from_slice(&point.x.to_le_bytes());
+        encoded.extend_from_slice(&point.y.to_le_bytes());
+        encoded.extend_from_slice(&point.world_id.to_le_bytes());
+        encoded.extend_from_slice(&encode_dotnet_string(&point.world_name));
+    }
+    encoded.extend_from_slice(&(-1i32).to_le_bytes());
+    encoded
+}
+
+fn encode_research(entries: &[ResearchEntry]) -> Vec<u8> {
+    let mut encoded = Vec::new();
+    encoded.push(0);
+    encoded.extend_from_slice(&(entries.len() as i32).to_le_bytes());
+    for entry in entries {
+        encoded.extend_from_slice(&encode_dotnet_string(&entry.persistent_id));
+        encoded.extend_from_slice(&entry.count.to_le_bytes());
+    }
+    encoded
+}
+
+fn encode_journey_powers(powers: &JourneyPowers, serialized_ids: &[u16]) -> Vec<u8> {
+    let mut encoded = Vec::with_capacity(16);
+    for id in serialized_ids {
+        let payload = match id {
+            5 => vec![u8::from(powers.godmode)],
+            11 => vec![u8::from(powers.far_placement_range)],
+            14 => powers.spawn_rate.to_le_bytes().to_vec(),
+            _ => continue,
+        };
+        encoded.push(1);
+        encoded.extend_from_slice(&id.to_le_bytes());
+        encoded.extend_from_slice(&payload);
+    }
+    encoded.push(0);
+    encoded
+}
+
 fn write_character(
     data: &mut [u8],
     layout: Layout,
@@ -665,8 +1032,9 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
     let bank2 = bank1 + BANK_RECORDS * BANK_RECORD_SIZE;
     let bank3 = bank2 + BANK_RECORDS * BANK_RECORD_SIZE;
     let bank4 = bank3 + BANK_RECORDS * BANK_RECORD_SIZE;
-    let mut cursor = bank4 + BANK_RECORDS * INVENTORY_RECORD_SIZE + 1;
-    cursor = checked_advance(data, cursor, BUFF_RECORDS * BUFF_RECORD_SIZE)?;
+    let buffs = bank4 + BANK_RECORDS * INVENTORY_RECORD_SIZE + 1;
+    let mut cursor = checked_advance(data, buffs, BUFF_RECORDS * BUFF_RECORD_SIZE)?;
+    let spawn_points = cursor;
 
     let mut found_spawn_end = false;
     for _ in 0..200 {
@@ -685,6 +1053,7 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
             "spawn-point list has no v325 terminator".into(),
         ));
     }
+    let spawn_points_end = cursor;
 
     cursor = checked_advance(data, cursor, 1 + 13 + 4 + 4 * 4 + 12 * 4 + 4)?;
     let dead = read_u8(data, cursor)? != 0;
@@ -694,6 +1063,7 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
     }
     cursor = checked_advance(data, cursor, 8 + 4)?;
 
+    let research = cursor;
     cursor = checked_advance(data, cursor, 1)?;
     let sacrifice_count = read_i32(data, cursor)?;
     cursor += 4;
@@ -706,6 +1076,7 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
         let (_, end) = read_dotnet_string(data, cursor)?;
         cursor = checked_advance(data, end, 4)?;
     }
+    let research_end = cursor;
 
     let temporary_slots = read_u8(data, cursor)?;
     cursor += 1;
@@ -715,6 +1086,7 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
         }
     }
 
+    let powers = cursor;
     loop {
         let has_power = read_u8(data, cursor)? != 0;
         cursor += 1;
@@ -734,7 +1106,9 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
         };
         cursor = checked_advance(data, cursor, payload_size)?;
     }
+    let powers_end = cursor;
 
+    let super_cart = cursor;
     cursor = checked_advance(data, cursor, 1)?;
     let current_loadout_index = cursor;
     cursor = checked_advance(data, cursor, 4)?;
@@ -750,6 +1124,14 @@ fn locate_layout(data: &[u8]) -> Result<Layout, SaveError> {
         inventory,
         misc,
         banks: [bank1, bank2, bank3, bank4],
+        buffs,
+        spawn_points,
+        spawn_points_end,
+        research,
+        research_end,
+        powers,
+        powers_end,
+        super_cart,
         current_loadout_index,
         loadouts,
         voice_variant,
@@ -1093,8 +1475,19 @@ mod tests {
             favorited: false,
         };
 
-        let patched =
-            patch_document(&data, &before.character, &inventory, &equipment, &storage).unwrap();
+        let patched = patch_document(
+            &data,
+            PatchDocument {
+                character: &before.character,
+                effects: &before.effects,
+                journey: &before.journey,
+                spawn_points: &before.spawn_points,
+                inventory: &inventory,
+                equipment: &equipment,
+                storage: &storage,
+            },
+        )
+        .unwrap();
         let after = parse(Path::new("fixture.plr"), "hash", &patched).unwrap();
         assert_eq!(after.inventory[18].item_id, 3043);
         assert_eq!(after.equipment.loadouts[0].armor[3].item_id, 111);
@@ -1132,6 +1525,9 @@ mod tests {
         };
         let error = validate_document(
             &document.character,
+            &document.effects,
+            &document.journey,
+            &document.spawn_points,
             &document.inventory,
             &equipment,
             &document.storage,
@@ -1166,10 +1562,15 @@ mod tests {
 
         let patched = patch_document(
             &data,
-            &before.character,
-            &before.inventory,
-            &equipment,
-            &storage,
+            PatchDocument {
+                character: &before.character,
+                effects: &before.effects,
+                journey: &before.journey,
+                spawn_points: &before.spawn_points,
+                inventory: &before.inventory,
+                equipment: &equipment,
+                storage: &storage,
+            },
         )
         .unwrap();
         let after = parse(Path::new("fixture.plr"), "hash", &patched).unwrap();
@@ -1243,10 +1644,15 @@ mod tests {
 
         let patched = patch_document(
             &data,
-            &character,
-            &before.inventory,
-            &before.equipment,
-            &before.storage,
+            PatchDocument {
+                character: &character,
+                effects: &before.effects,
+                journey: &before.journey,
+                spawn_points: &before.spawn_points,
+                inventory: &before.inventory,
+                equipment: &before.equipment,
+                storage: &before.storage,
+            },
         )
         .unwrap();
         let after = parse(Path::new("fixture.plr"), "hash", &patched).unwrap();
@@ -1301,10 +1707,15 @@ mod tests {
 
         let patched = patch_document(
             &data,
-            &character,
-            &before.inventory,
-            &before.equipment,
-            &before.storage,
+            PatchDocument {
+                character: &character,
+                effects: &before.effects,
+                journey: &before.journey,
+                spawn_points: &before.spawn_points,
+                inventory: &before.inventory,
+                equipment: &before.equipment,
+                storage: &before.storage,
+            },
         )
         .unwrap();
         assert_eq!(patched.len(), data.len());
@@ -1323,5 +1734,78 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn patches_effects_spawns_research_and_journey_powers_without_losing_tail() {
+        let mut data = synthetic_player("NewBruv");
+        let original_layout = locate_layout(&data).unwrap();
+        let tail_marker = original_layout.voice_pitch + 4;
+        data[tail_marker..tail_marker + 4].copy_from_slice(&0x1234_5678u32.to_le_bytes());
+        let before = parse(Path::new("fixture.plr"), "hash", &data).unwrap();
+
+        let mut effects = before.effects.clone();
+        effects.buffs[0] = BuffSlot {
+            slot: 0,
+            buff_id: 5,
+            time: 3600,
+        };
+        let spawn_points = vec![
+            SpawnPoint {
+                x: 100,
+                y: 200,
+                world_id: 300,
+                world_name: "Alpha".into(),
+            },
+            SpawnPoint {
+                x: 400,
+                y: 500,
+                world_id: 600,
+                world_name: "测试世界".into(),
+            },
+        ];
+        let mut journey = before.journey.clone();
+        journey.research = vec![
+            ResearchEntry {
+                persistent_id: "MagicLantern".into(),
+                count: 9999,
+            },
+            ResearchEntry {
+                persistent_id: "DrillContainmentUnit".into(),
+                count: 1,
+            },
+        ];
+        journey.serialized_power_ids = vec![5, 11, 14];
+        journey.powers = JourneyPowers {
+            godmode: true,
+            far_placement_range: false,
+            spawn_rate: 0.25,
+        };
+        journey.unlocked_super_cart = true;
+        journey.enabled_super_cart = true;
+
+        let patched = patch_document(
+            &data,
+            PatchDocument {
+                character: &before.character,
+                effects: &effects,
+                journey: &journey,
+                spawn_points: &spawn_points,
+                inventory: &before.inventory,
+                equipment: &before.equipment,
+                storage: &before.storage,
+            },
+        )
+        .unwrap();
+        let after = parse(Path::new("fixture.plr"), "hash", &patched).unwrap();
+        assert_eq!(after.effects, effects);
+        assert_eq!(after.spawn_points, spawn_points);
+        assert_eq!(after.journey, journey);
+        assert_eq!(after.inventory, before.inventory);
+        let new_layout = locate_layout(&patched).unwrap();
+        assert_eq!(
+            &patched[new_layout.voice_pitch + 4..new_layout.voice_pitch + 8],
+            &0x1234_5678u32.to_le_bytes()
+        );
     }
 }

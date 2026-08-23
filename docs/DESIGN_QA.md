@@ -51,9 +51,13 @@ Both images were inspected at original resolution with `view_image` after the in
 - React Doctor completed at 100/100 with no diagnostics.
 - Opened the Character workspace at 1280×720 and verified identity, stats, appearance, permanent upgrades, records, warnings, shared undo/redo, and unsaved/save state.
 - Confirmed the Character pane owns vertical scrolling while the header and change ledger stay pinned; no page or horizontal overflow remains.
+- Added Ironskin from the complete v325 buff catalog, changed it to 108,000 ticks with the 30-minute control, and confirmed both changes in the shared ledger.
+- Enabled personal Journey Godmode, completed Dirt Block research, bulk-completed all tracked research to 9999, and verified serialized-state labels and counts.
+- Added and rapidly edited a `QA World / 424242 / 515 / 220` spawn record, removed it, and confirmed global Undo restored the complete record.
+- Rechecked all three new workspaces at 1280×720: the body remains fixed, the footer remains pinned, the workspace owns scrolling, and browser warnings/errors remain empty.
 
 ## Remaining deviations
 
 - Real item sprites are absent by policy and licensing design.
-- Effects, journey research, and spawn points remain visible roadmap surfaces; their v325 write codecs are not enabled yet.
-- The offline item catalog currently contributes a roughly 1 MB uncompressed JavaScript chunk (about 191 KB gzip). It should move to an indexed lazy-loaded resource before 1.0.
+- Historical `.plr` versions remain fail-closed until their own codecs and golden fixtures are implemented.
+- The offline item and buff catalogs currently contribute a roughly 1.1 MB uncompressed JavaScript chunk (about 221 KB gzip). They should move to indexed lazy-loaded resources before 1.0.

@@ -1,0 +1,2402 @@
+[
+  {
+    "id": 1,
+    "key": "ObsidianSkin",
+    "name": "Obsidian Skin",
+    "description": "Immune to lava"
+  },
+  {
+    "id": 2,
+    "key": "Regeneration",
+    "name": "Regeneration",
+    "description": "Provides life regeneration"
+  },
+  {
+    "id": 3,
+    "key": "Swiftness",
+    "name": "Swiftness",
+    "description": "25% increased movement speed"
+  },
+  {
+    "id": 4,
+    "key": "Gills",
+    "name": "Gills",
+    "description": "Allows you to breathe in liquids"
+  },
+  {
+    "id": 5,
+    "key": "Ironskin",
+    "name": "Ironskin",
+    "description": "Increase defense by 8"
+  },
+  {
+    "id": 6,
+    "key": "ManaRegeneration",
+    "name": "Mana Regeneration",
+    "description": "Increased mana regeneration"
+  },
+  {
+    "id": 7,
+    "key": "MagicPower",
+    "name": "Magic Power",
+    "description": "20% increased magic damage"
+  },
+  {
+    "id": 8,
+    "key": "Featherfall",
+    "name": "Featherfall",
+    "description": "Press UP or DOWN to control speed of descent"
+  },
+  {
+    "id": 9,
+    "key": "Spelunker",
+    "name": "Spelunker",
+    "description": "Shows the location of treasure and ore"
+  },
+  {
+    "id": 10,
+    "key": "Invisibility",
+    "name": "Invisibility",
+    "description": "Grants invisibility"
+  },
+  {
+    "id": 11,
+    "key": "Shine",
+    "name": "Shine",
+    "description": "Emitting light"
+  },
+  {
+    "id": 12,
+    "key": "NightOwl",
+    "name": "Night Owl",
+    "description": "Increased night vision"
+  },
+  {
+    "id": 13,
+    "key": "Battle",
+    "name": "Battle",
+    "description": "Increased enemy spawn rate"
+  },
+  {
+    "id": 14,
+    "key": "Thorns",
+    "name": "Thorns",
+    "description": "Attackers also take damage"
+  },
+  {
+    "id": 15,
+    "key": "WaterWalking",
+    "name": "Water Walking",
+    "description": "Press DOWN to enter water"
+  },
+  {
+    "id": 16,
+    "key": "Archery",
+    "name": "Archery",
+    "description": "10% increased bow damage and 20% increased arrow speed"
+  },
+  {
+    "id": 17,
+    "key": "Hunter",
+    "name": "Hunter",
+    "description": "Shows the location of enemies"
+  },
+  {
+    "id": 18,
+    "key": "Gravitation",
+    "name": "Gravitation",
+    "description": "Press UP to reverse gravity"
+  },
+  {
+    "id": 19,
+    "key": "ShadowOrb",
+    "name": "Shadow Orb",
+    "description": "A magical orb that provides light"
+  },
+  {
+    "id": 20,
+    "key": "Poisoned",
+    "name": "Poisoned",
+    "description": "Slowly losing life"
+  },
+  {
+    "id": 21,
+    "key": "PotionSickness",
+    "name": "Potion Sickness",
+    "description": "Cannot consume anymore healing items"
+  },
+  {
+    "id": 22,
+    "key": "Darkness",
+    "name": "Darkness",
+    "description": "Decreased light vision"
+  },
+  {
+    "id": 23,
+    "key": "Cursed",
+    "name": "Cursed",
+    "description": "Cannot use any items"
+  },
+  {
+    "id": 24,
+    "key": "OnFire",
+    "name": "On Fire!",
+    "description": "Slowly losing life"
+  },
+  {
+    "id": 25,
+    "key": "Tipsy",
+    "name": "Tipsy",
+    "description": "Increased melee abilities, lowered defense"
+  },
+  {
+    "id": 26,
+    "key": "WellFed",
+    "name": "Well Fed",
+    "description": "Minor improvements to all stats"
+  },
+  {
+    "id": 27,
+    "key": "FairyBlue",
+    "name": "Fairy",
+    "description": "A fairy is following you"
+  },
+  {
+    "id": 28,
+    "key": "Werewolf",
+    "name": "Werewolf",
+    "description": "Physical abilities are increased"
+  },
+  {
+    "id": 29,
+    "key": "Clairvoyance",
+    "name": "Clairvoyance",
+    "description": "Magic powers are increased"
+  },
+  {
+    "id": 30,
+    "key": "Bleeding",
+    "name": "Bleeding",
+    "description": "Cannot regenerate life"
+  },
+  {
+    "id": 31,
+    "key": "Confused",
+    "name": "Confused",
+    "description": "Movement is reversed"
+  },
+  {
+    "id": 32,
+    "key": "Slow",
+    "name": "Slow",
+    "description": "Movement speed is reduced"
+  },
+  {
+    "id": 33,
+    "key": "Weak",
+    "name": "Weak",
+    "description": "Physical abilities are decreased"
+  },
+  {
+    "id": 34,
+    "key": "Merfolk",
+    "name": "Merfolk",
+    "description": "Can breathe and move easily underwater"
+  },
+  {
+    "id": 35,
+    "key": "Silenced",
+    "name": "Silenced",
+    "description": "Cannot use items that require mana"
+  },
+  {
+    "id": 36,
+    "key": "BrokenArmor",
+    "name": "Broken Armor",
+    "description": "Defense is cut in half"
+  },
+  {
+    "id": 37,
+    "key": "Horrified",
+    "name": "Horrified",
+    "description": "You have seen something nasty, there is no escape."
+  },
+  {
+    "id": 38,
+    "key": "TheTongue",
+    "name": "The Tongue",
+    "description": "You are being sucked into the mouth"
+  },
+  {
+    "id": 39,
+    "key": "CursedInferno",
+    "name": "Cursed Inferno",
+    "description": "Losing life"
+  },
+  {
+    "id": 40,
+    "key": "PetBunny",
+    "name": "Pet Bunny",
+    "description": "I think it wants your carrot"
+  },
+  {
+    "id": 41,
+    "key": "BabyPenguin",
+    "name": "Baby Penguin",
+    "description": "I think it wants your fish"
+  },
+  {
+    "id": 42,
+    "key": "PetTurtle",
+    "name": "Pet Turtle",
+    "description": "Happy turtle time!"
+  },
+  {
+    "id": 43,
+    "key": "PaladinsShield",
+    "name": "Paladin's Shield",
+    "description": "25% of damage taken will be redirected to another player"
+  },
+  {
+    "id": 44,
+    "key": "Frostburn",
+    "name": "Frostburn",
+    "description": "It's either really hot or really cold. Either way it REALLY hurts"
+  },
+  {
+    "id": 45,
+    "key": "BabyEater",
+    "name": "Baby Eater",
+    "description": "A baby Eater of Souls is following you"
+  },
+  {
+    "id": 46,
+    "key": "Chilled",
+    "name": "Chilled",
+    "description": "Your movement speed has been reduced"
+  },
+  {
+    "id": 47,
+    "key": "Frozen",
+    "name": "Frozen",
+    "description": "You can't move!"
+  },
+  {
+    "id": 48,
+    "key": "Honey",
+    "name": "Honey",
+    "description": "Life regeneration is increased"
+  },
+  {
+    "id": 49,
+    "key": "Pygmies",
+    "name": "Pygmies",
+    "description": "The pygmies will fight for you"
+  },
+  {
+    "id": 50,
+    "key": "BabySkeletronHead",
+    "name": "Baby Skeletron Head",
+    "description": "Don't even ask..."
+  },
+  {
+    "id": 51,
+    "key": "BabyHornet",
+    "name": "Baby Hornet",
+    "description": "It thinks you are its mother"
+  },
+  {
+    "id": 52,
+    "key": "TikiSpirit",
+    "name": "Tiki Spirit",
+    "description": "A friendly spirit is following you"
+  },
+  {
+    "id": 53,
+    "key": "PetLizard",
+    "name": "Pet Lizard",
+    "description": "Chillin' like a reptilian"
+  },
+  {
+    "id": 54,
+    "key": "PetParrot",
+    "name": "Pet Parrot",
+    "description": "Polly wants the cracker"
+  },
+  {
+    "id": 55,
+    "key": "BabyTruffle",
+    "name": "Baby Truffle",
+    "description": "Isn't this just soooo cute?"
+  },
+  {
+    "id": 56,
+    "key": "PetSapling",
+    "name": "Pet Sapling",
+    "description": "A little sapling is following you"
+  },
+  {
+    "id": 57,
+    "key": "Wisp",
+    "name": "Wisp",
+    "description": "A wisp is following you"
+  },
+  {
+    "id": 58,
+    "key": "RapidHealing",
+    "name": "Rapid Healing",
+    "description": "Life regeneration is greatly increased"
+  },
+  {
+    "id": 59,
+    "key": "ShadowDodge",
+    "name": "Holy Protection",
+    "description": "You will dodge the next attack"
+  },
+  {
+    "id": 60,
+    "key": "LeafCrystal",
+    "name": "Leaf Crystal",
+    "description": "Shoots crystal leaves at nearby enemies"
+  },
+  {
+    "id": 61,
+    "key": "BabyDinosaur",
+    "name": "Baby Dinosaur",
+    "description": "A baby dinosaur is following you"
+  },
+  {
+    "id": 62,
+    "key": "IceBarrier",
+    "name": "Ice Barrier",
+    "description": "Damage taken is reduced by 25%"
+  },
+  {
+    "id": 63,
+    "key": "Panic",
+    "name": "Panic!",
+    "description": "Movement speed is increased"
+  },
+  {
+    "id": 64,
+    "key": "BabySlime",
+    "name": "Baby Slime",
+    "description": "The baby slime will fight for you"
+  },
+  {
+    "id": 65,
+    "key": "EyeballSpring",
+    "name": "Eyeball Spring",
+    "description": "An eyeball spring is following you"
+  },
+  {
+    "id": 66,
+    "key": "BabySnowman",
+    "name": "Baby Snowman",
+    "description": "A baby snowman is following you"
+  },
+  {
+    "id": 67,
+    "key": "Burning",
+    "name": "Burning",
+    "description": "Losing life and slowed movement"
+  },
+  {
+    "id": 68,
+    "key": "Suffocation",
+    "name": "Suffocation",
+    "description": "Losing life"
+  },
+  {
+    "id": 69,
+    "key": "Ichor",
+    "name": "Ichor",
+    "description": "Reduced defense"
+  },
+  {
+    "id": 70,
+    "key": "Venom",
+    "name": "Acid Venom",
+    "description": "Losing life"
+  },
+  {
+    "id": 71,
+    "key": "WeaponImbueVenom",
+    "name": "Weapon Imbue: Acid Venom",
+    "description": "Melee attacks inflict acid venom on your targets"
+  },
+  {
+    "id": 72,
+    "key": "Midas",
+    "name": "Midas",
+    "description": "Drop more money on death"
+  },
+  {
+    "id": 73,
+    "key": "WeaponImbueCursedFlames",
+    "name": "Weapon Imbue: Cursed Flames",
+    "description": "Melee attacks inflict enemies with cursed flames"
+  },
+  {
+    "id": 74,
+    "key": "WeaponImbueFire",
+    "name": "Weapon Imbue: Fire",
+    "description": "Melee attacks set enemies on fire"
+  },
+  {
+    "id": 75,
+    "key": "WeaponImbueGold",
+    "name": "Weapon Imbue: Gold",
+    "description": "Melee attacks make enemies drop more gold"
+  },
+  {
+    "id": 76,
+    "key": "WeaponImbueIchor",
+    "name": "Weapon Imbue: Ichor",
+    "description": "Melee attacks decrease enemies defense"
+  },
+  {
+    "id": 77,
+    "key": "WeaponImbueNanites",
+    "name": "Weapon Imbue: Nanites",
+    "description": "Melee attacks confuse enemies"
+  },
+  {
+    "id": 78,
+    "key": "WeaponImbueConfetti",
+    "name": "Weapon Imbue: Confetti",
+    "description": "Melee attacks cause confetti to appear"
+  },
+  {
+    "id": 79,
+    "key": "WeaponImbuePoison",
+    "name": "Weapon Imbue: Poison",
+    "description": "Melee attacks poison enemies"
+  },
+  {
+    "id": 80,
+    "key": "Blackout",
+    "name": "Blackout",
+    "description": "Light vision severely reduced"
+  },
+  {
+    "id": 81,
+    "key": "PetSpider",
+    "name": "Pet Spider",
+    "description": "A spider is following you"
+  },
+  {
+    "id": 82,
+    "key": "Squashling",
+    "name": "Squashling",
+    "description": "A squashling is following you"
+  },
+  {
+    "id": 83,
+    "key": "Ravens",
+    "name": "Ravens",
+    "description": "The ravens will attack your enemies"
+  },
+  {
+    "id": 84,
+    "key": "BlackCat",
+    "name": "Black Cat",
+    "description": "A black kitty is following you"
+  },
+  {
+    "id": 85,
+    "key": "CursedSapling",
+    "name": "Cursed Sapling",
+    "description": "A cursed sapling is following you"
+  },
+  {
+    "id": 86,
+    "key": "WaterCandle",
+    "name": "Water Candle",
+    "description": "Increased monster spawn rate"
+  },
+  {
+    "id": 87,
+    "key": "Campfire",
+    "name": "Cozy Fire",
+    "description": "Life regen is slightly increased"
+  },
+  {
+    "id": 88,
+    "key": "ChaosState",
+    "name": "Chaos State",
+    "description": "Using the Rod of Discord will take life"
+  },
+  {
+    "id": 89,
+    "key": "HeartLamp",
+    "name": "Heart Lamp",
+    "description": "Life regen is increased"
+  },
+  {
+    "id": 90,
+    "key": "Rudolph",
+    "name": "Rudolph",
+    "description": "Riding the red nosed reindeer"
+  },
+  {
+    "id": 91,
+    "key": "Puppy",
+    "name": "Puppy",
+    "description": "A puppy is following you"
+  },
+  {
+    "id": 92,
+    "key": "BabyGrinch",
+    "name": "Baby Grinch",
+    "description": "A baby grinch is following you"
+  },
+  {
+    "id": 93,
+    "key": "AmmoBox",
+    "name": "Ammo Box",
+    "description": "20% chance to save ammo"
+  },
+  {
+    "id": 94,
+    "key": "ManaSickness",
+    "name": "Mana Sickness",
+    "description": "Magic damage reduced by "
+  },
+  {
+    "id": 95,
+    "key": "BeetleEndurance1",
+    "name": "Beetle Endurance",
+    "description": "Absorbs 15% of damage taken"
+  },
+  {
+    "id": 96,
+    "key": "BeetleEndurance2",
+    "name": "Beetle Endurance",
+    "description": "Absorbs 30% of damage taken"
+  },
+  {
+    "id": 97,
+    "key": "BeetleEndurance3",
+    "name": "Beetle Endurance",
+    "description": "Absorbs 45% of damage taken"
+  },
+  {
+    "id": 98,
+    "key": "BeetleMight1",
+    "name": "Beetle Might",
+    "description": "Melee damage and speed increase by 10%"
+  },
+  {
+    "id": 99,
+    "key": "BeetleMight2",
+    "name": "Beetle Might",
+    "description": "Melee damage and speed increase by 20%"
+  },
+  {
+    "id": 100,
+    "key": "BeetleMight3",
+    "name": "Beetle Might",
+    "description": "Melee damage and speed increase by 30%"
+  },
+  {
+    "id": 101,
+    "key": "FairyRed",
+    "name": "Fairy",
+    "description": "A fairy is following you"
+  },
+  {
+    "id": 102,
+    "key": "FairyGreen",
+    "name": "Fairy",
+    "description": "A fairy is following you"
+  },
+  {
+    "id": 103,
+    "key": "Wet",
+    "name": "Wet",
+    "description": "You are dripping water"
+  },
+  {
+    "id": 104,
+    "key": "Mining",
+    "name": "Mining",
+    "description": "25% increased mining speed"
+  },
+  {
+    "id": 105,
+    "key": "Heartreach",
+    "name": "Heartreach",
+    "description": "Increased heart pickup range"
+  },
+  {
+    "id": 106,
+    "key": "Calm",
+    "name": "Calm",
+    "description": "Decreased enemy spawn rate"
+  },
+  {
+    "id": 107,
+    "key": "Builder",
+    "name": "Builder",
+    "description": "Increased placement speed and range"
+  },
+  {
+    "id": 108,
+    "key": "Titan",
+    "name": "Titan",
+    "description": "Increased knockback"
+  },
+  {
+    "id": 109,
+    "key": "Flipper",
+    "name": "Flipper",
+    "description": "Move like normal in water"
+  },
+  {
+    "id": 110,
+    "key": "Summoning",
+    "name": "Summoning",
+    "description": "Increased your max number of minions by 1"
+  },
+  {
+    "id": 111,
+    "key": "Dangersense",
+    "name": "Dangersense",
+    "description": "You can see nearby hazards"
+  },
+  {
+    "id": 112,
+    "key": "AmmoReservation",
+    "name": "Ammo Reservation",
+    "description": "20% chance to save ammo"
+  },
+  {
+    "id": 113,
+    "key": "Lifeforce",
+    "name": "Lifeforce",
+    "description": "20% increased max life"
+  },
+  {
+    "id": 114,
+    "key": "Endurance",
+    "name": "Endurance",
+    "description": "10% reduced damage"
+  },
+  {
+    "id": 115,
+    "key": "Rage",
+    "name": "Rage",
+    "description": "10% increased critical chance"
+  },
+  {
+    "id": 116,
+    "key": "Inferno",
+    "name": "Inferno",
+    "description": "Nearby enemies are ignited"
+  },
+  {
+    "id": 117,
+    "key": "Wrath",
+    "name": "Wrath",
+    "description": "10% increased damage"
+  },
+  {
+    "id": 118,
+    "key": "Minecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 119,
+    "key": "Lovestruck",
+    "name": "Lovestruck",
+    "description": "You are in love!"
+  },
+  {
+    "id": 120,
+    "key": "Stinky",
+    "name": "Stinky",
+    "description": "You smell terrible"
+  },
+  {
+    "id": 121,
+    "key": "Fishing",
+    "name": "Fishing",
+    "description": "Increased fishing power"
+  },
+  {
+    "id": 122,
+    "key": "Sonar",
+    "name": "Sonar",
+    "description": "You can see what's biting your hook"
+  },
+  {
+    "id": 123,
+    "key": "Crate",
+    "name": "Crate",
+    "description": "Greater chance of fishing up a crate"
+  },
+  {
+    "id": 124,
+    "key": "Warmth",
+    "name": "Warmth",
+    "description": "Reduced damage from cold sources"
+  },
+  {
+    "id": 125,
+    "key": "HornetMinion",
+    "name": "Hornet",
+    "description": "The hornet will fight for you"
+  },
+  {
+    "id": 126,
+    "key": "ImpMinion",
+    "name": "Imp",
+    "description": "The imp will fight for you"
+  },
+  {
+    "id": 127,
+    "key": "ZephyrFish",
+    "name": "Zephyr Fish",
+    "description": "It likes swimming around you"
+  },
+  {
+    "id": 128,
+    "key": "BunnyMount",
+    "name": "Bunny Mount",
+    "description": "You are craving carrots"
+  },
+  {
+    "id": 129,
+    "key": "PigronMount",
+    "name": "Pigron Mount",
+    "description": "Now you see me..."
+  },
+  {
+    "id": 130,
+    "key": "SlimeMount",
+    "name": "Slime Mount",
+    "description": "BOOOIIINNNG!"
+  },
+  {
+    "id": 131,
+    "key": "TurtleMount",
+    "name": "Turtle Mount",
+    "description": "Slow if by land, zoom if by sea"
+  },
+  {
+    "id": 132,
+    "key": "BeeMount",
+    "name": "Bee Mount",
+    "description": "BzzzBzzBZZZZBzzz"
+  },
+  {
+    "id": 133,
+    "key": "SpiderMinion",
+    "name": "Spider",
+    "description": "The spider will fight for you"
+  },
+  {
+    "id": 134,
+    "key": "TwinEyesMinion",
+    "name": "Twins",
+    "description": "The twins will fight for you"
+  },
+  {
+    "id": 135,
+    "key": "PirateMinion",
+    "name": "Pirate",
+    "description": "The pirate will fight for you"
+  },
+  {
+    "id": 136,
+    "key": "MiniMinotaur",
+    "name": "Faun",
+    "description": "His name is Shaun"
+  },
+  {
+    "id": 137,
+    "key": "Slimed",
+    "name": "Slime",
+    "description": "You are slimy and sticky"
+  },
+  {
+    "id": 138,
+    "key": "MinecartLegacyUnused",
+    "name": "Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 139,
+    "key": "SharknadoMinion",
+    "name": "Sharknado",
+    "description": "The sharknado will fight for you"
+  },
+  {
+    "id": 140,
+    "key": "UFOMinion",
+    "name": "UFO",
+    "description": "The UFO will fight for you"
+  },
+  {
+    "id": 141,
+    "key": "UFOMount",
+    "name": "UFO Mount",
+    "description": "It's a good thing you had a MAC"
+  },
+  {
+    "id": 142,
+    "key": "DrillMount",
+    "name": "Drill Mount",
+    "description": "Riding in a flying drill"
+  },
+  {
+    "id": 143,
+    "key": "ScutlixMount",
+    "name": "Scutlix Mount",
+    "description": "Pew Pew"
+  },
+  {
+    "id": 144,
+    "key": "Electrified",
+    "name": "Electrified",
+    "description": "Moving hurts!"
+  },
+  {
+    "id": 145,
+    "key": "MoonLeech",
+    "name": "Moon Bite",
+    "description": "You are unable to absorb healing effects"
+  },
+  {
+    "id": 146,
+    "key": "Sunflower",
+    "name": "Happy!",
+    "description": "Movement speed increased and monster spawns reduced"
+  },
+  {
+    "id": 147,
+    "key": "MonsterBanner",
+    "name": "Banner",
+    "description": "Increased damage and defense from the following:"
+  },
+  {
+    "id": 148,
+    "key": "Rabies",
+    "name": "Feral Bite",
+    "description": "Increased damage, Decreased life regen, Causes status effects"
+  },
+  {
+    "id": 149,
+    "key": "Webbed",
+    "name": "Webbed",
+    "description": "You are stuck"
+  },
+  {
+    "id": 150,
+    "key": "Bewitched",
+    "name": "Bewitched",
+    "description": "Increased your max number of minions by 1"
+  },
+  {
+    "id": 151,
+    "key": "SoulDrain",
+    "name": "Life Drain",
+    "description": "Increased life regeneration"
+  },
+  {
+    "id": 152,
+    "key": "MagicLantern",
+    "name": "Magic Lantern",
+    "description": "An enchanted lantern is lighting your way"
+  },
+  {
+    "id": 153,
+    "key": "ShadowFlame",
+    "name": "Shadowflame",
+    "description": "Losing life"
+  },
+  {
+    "id": 154,
+    "key": "BabyFaceMonster",
+    "name": "Baby Face Monster",
+    "description": "A baby face monster is following you"
+  },
+  {
+    "id": 155,
+    "key": "CrimsonHeart",
+    "name": "Crimson Heart",
+    "description": "A magical heart that provides light"
+  },
+  {
+    "id": 156,
+    "key": "Stoned",
+    "name": "Stoned",
+    "description": "You are completely petrified!"
+  },
+  {
+    "id": 157,
+    "key": "PeaceCandle",
+    "name": "Peace Candle",
+    "description": "Decreased monster spawn rate"
+  },
+  {
+    "id": 158,
+    "key": "StarInBottle",
+    "name": "Star in a Bottle",
+    "description": "Increased mana regeneration"
+  },
+  {
+    "id": 159,
+    "key": "Sharpened",
+    "name": "Sharpened",
+    "description": "Melee weapons have armor penetration"
+  },
+  {
+    "id": 160,
+    "key": "Dazed",
+    "name": "Dazed",
+    "description": "Movement is greatly slowed"
+  },
+  {
+    "id": 161,
+    "key": "DeadlySphere",
+    "name": "Deadly Sphere",
+    "description": "The Deadly Sphere will fight for you"
+  },
+  {
+    "id": 162,
+    "key": "UnicornMount",
+    "name": "Unicorn Mount",
+    "description": "Charge ahead... fabulously!"
+  },
+  {
+    "id": 163,
+    "key": "Obstructed",
+    "name": "Obstructed",
+    "description": "You can't see!"
+  },
+  {
+    "id": 164,
+    "key": "VortexDebuff",
+    "name": "Distorted",
+    "description": "Gravity around you is distorted"
+  },
+  {
+    "id": 165,
+    "key": "DryadsWard",
+    "name": "Dryad's Blessing",
+    "description": "The power of nature protects you"
+  },
+  {
+    "id": 166,
+    "key": "MinecartMech",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 167,
+    "key": "MinecartMechLegacyUnused",
+    "name": "Minecart Mech Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 168,
+    "key": "CuteFishronMount",
+    "name": "Cute Fishron Mount",
+    "description": "Just don't make it crawl."
+  },
+  {
+    "id": 169,
+    "key": "BoneJavelin",
+    "name": "Penetrated",
+    "description": "Bleeding Out"
+  },
+  {
+    "id": 170,
+    "key": "SolarShield1",
+    "name": "Solar Blaze",
+    "description": "Absorbs 20% of damage taken, repel enemies when taking damage"
+  },
+  {
+    "id": 171,
+    "key": "SolarShield2",
+    "name": "Solar Blaze",
+    "description": "Absorbs 20% of damage taken, repel enemies when taking damage"
+  },
+  {
+    "id": 172,
+    "key": "SolarShield3",
+    "name": "Solar Blaze",
+    "description": "Absorbs 20% of damage taken, repel enemies when taking damage"
+  },
+  {
+    "id": 173,
+    "key": "NebulaUpLife1",
+    "name": "Life Nebula",
+    "description": "Increased life regeneration"
+  },
+  {
+    "id": 174,
+    "key": "NebulaUpLife2",
+    "name": "Life Nebula",
+    "description": "Increased life regeneration"
+  },
+  {
+    "id": 175,
+    "key": "NebulaUpLife3",
+    "name": "Life Nebula",
+    "description": "Increased life regeneration"
+  },
+  {
+    "id": 176,
+    "key": "NebulaUpMana1",
+    "name": "Mana Nebula",
+    "description": "Increased mana regeneration"
+  },
+  {
+    "id": 177,
+    "key": "NebulaUpMana2",
+    "name": "Mana Nebula",
+    "description": "Increased mana regeneration"
+  },
+  {
+    "id": 178,
+    "key": "NebulaUpMana3",
+    "name": "Mana Nebula",
+    "description": "Increased mana regeneration"
+  },
+  {
+    "id": 179,
+    "key": "NebulaUpDmg1",
+    "name": "Damage Nebula",
+    "description": "15% increased damage"
+  },
+  {
+    "id": 180,
+    "key": "NebulaUpDmg2",
+    "name": "Damage Nebula",
+    "description": "30% increased damage"
+  },
+  {
+    "id": 181,
+    "key": "NebulaUpDmg3",
+    "name": "Damage Nebula",
+    "description": "45% increased damage"
+  },
+  {
+    "id": 182,
+    "key": "StardustMinion",
+    "name": "Stardust Cell",
+    "description": "The stardust cell will fight for you"
+  },
+  {
+    "id": 183,
+    "key": "StardustMinionBleed",
+    "name": "Celled",
+    "description": "being eaten by cells"
+  },
+  {
+    "id": 184,
+    "key": "MinecartWood",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 185,
+    "key": "MinecartWoodLegacyUnused",
+    "name": "Minecart Wood Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 186,
+    "key": "DryadsWardDebuff",
+    "name": "Dryad's Bane",
+    "description": "The power of nature compells you"
+  },
+  {
+    "id": 187,
+    "key": "StardustGuardianMinion",
+    "name": "Stardust Guardian",
+    "description": "The stardust guardian will protect you"
+  },
+  {
+    "id": 188,
+    "key": "StardustDragonMinion",
+    "name": "Stardust Dragon",
+    "description": "The stardust dragon will protect you"
+  },
+  {
+    "id": 189,
+    "key": "Daybreak",
+    "name": "Daybroken",
+    "description": "Incinerated by solar rays"
+  },
+  {
+    "id": 190,
+    "key": "SuspiciousTentacle",
+    "name": "Suspicious Looking Eye",
+    "description": "A suspicious looking eye that provides light"
+  },
+  {
+    "id": 191,
+    "key": "CompanionCube",
+    "name": "Companion Cube",
+    "description": "Will never threaten to stab you and, in fact, cannot speak"
+  },
+  {
+    "id": 192,
+    "key": "SugarRush",
+    "name": "Sugar Rush",
+    "description": "20% increased movement and mining speed"
+  },
+  {
+    "id": 193,
+    "key": "BasiliskMount",
+    "name": "Basilisk Mount",
+    "description": "Crash into anyone... and EVERYONE!"
+  },
+  {
+    "id": 194,
+    "key": "WindPushed",
+    "name": "Mighty Wind",
+    "description": "The wind moves you around!"
+  },
+  {
+    "id": 195,
+    "key": "WitheredArmor",
+    "name": "Withered Armor",
+    "description": "Your armor is lowered!"
+  },
+  {
+    "id": 196,
+    "key": "WitheredWeapon",
+    "name": "Withered Weapon",
+    "description": "Your attacks are weaker!"
+  },
+  {
+    "id": 197,
+    "key": "OgreSpit",
+    "name": "Oozed",
+    "description": "Movement is significantly reduced"
+  },
+  {
+    "id": 198,
+    "key": "ParryDamageBuff",
+    "name": "Striking Moment",
+    "description": "400% increased damage for next melee strike"
+  },
+  {
+    "id": 199,
+    "key": "NoBuilding",
+    "name": "Creative Shock",
+    "description": "You have lost the power of creation!"
+  },
+  {
+    "id": 200,
+    "key": "PetDD2Gato",
+    "name": "Propeller Gato",
+    "description": "A propeller gato is following you"
+  },
+  {
+    "id": 201,
+    "key": "PetDD2Ghost",
+    "name": "Flickerwick",
+    "description": "A flickerwick is following you"
+  },
+  {
+    "id": 202,
+    "key": "PetDD2Dragon",
+    "name": "Hoardagron",
+    "description": "A hoardagron is following you"
+  },
+  {
+    "id": 203,
+    "key": "BetsysCurse",
+    "name": "Betsy's Curse",
+    "description": "Defense is lowered"
+  },
+  {
+    "id": 204,
+    "key": "Oiled",
+    "name": "Oiled",
+    "description": "Taking more damage from being on fire"
+  },
+  {
+    "id": 205,
+    "key": "BallistaPanic",
+    "name": "Ballista Panic!",
+    "description": "Your ballistas rapidly shoot in panic!"
+  },
+  {
+    "id": 206,
+    "key": "WellFed2",
+    "name": "Plenty Satisfied",
+    "description": "Medium improvements to all stats"
+  },
+  {
+    "id": 207,
+    "key": "WellFed3",
+    "name": "Exquisitely Stuffed",
+    "description": "Major improvements to all stats"
+  },
+  {
+    "id": 208,
+    "key": "DesertMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 209,
+    "key": "DesertMinecartLegacyUnused",
+    "name": "Desert Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 210,
+    "key": "FishMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 211,
+    "key": "FishMinecartLegacyUnused",
+    "name": "Fish Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 212,
+    "key": "GolfCartMount",
+    "name": "Golf Cart",
+    "description": "A fair way to cross the fairway"
+  },
+  {
+    "id": 213,
+    "key": "BatOfLight",
+    "name": "Sanguine Bat",
+    "description": "The sanguine bat will fight for you"
+  },
+  {
+    "id": 214,
+    "key": "VampireFrog",
+    "name": "Vampire Frog",
+    "description": "The vampire frog will fight for you"
+  },
+  {
+    "id": 215,
+    "key": "CatBast",
+    "name": "The Bast Defense",
+    "description": "Defense is increased by 5"
+  },
+  {
+    "id": 216,
+    "key": "BabyBird",
+    "name": "Baby Finch",
+    "description": "The baby finch will fight for you"
+  },
+  {
+    "id": 217,
+    "key": "UpbeatStar",
+    "name": "Estee",
+    "description": "Estee is following you"
+  },
+  {
+    "id": 218,
+    "key": "SugarGlider",
+    "name": "Sugar Glider",
+    "description": "A sugar glider is following you"
+  },
+  {
+    "id": 219,
+    "key": "SharkPup",
+    "name": "Shark Pup",
+    "description": "Doo doo doo doo doo doo"
+  },
+  {
+    "id": 220,
+    "key": "BeeMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 221,
+    "key": "BeeMinecartLegacyUnused",
+    "name": "Bee Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 222,
+    "key": "LadybugMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 223,
+    "key": "LadybugMinecartLegacyUnused",
+    "name": "Ladybug Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 224,
+    "key": "PigronMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 225,
+    "key": "PigronMinecartLegacyUnused",
+    "name": "Pigron Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 226,
+    "key": "SunflowerMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 227,
+    "key": "SunflowerMinecartLegacyUnused",
+    "name": "Sunflower Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 228,
+    "key": "HellMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 229,
+    "key": "HellMinecartLegacyUnused",
+    "name": "Hell Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 230,
+    "key": "WitchBroom",
+    "name": "Witch's Broom",
+    "description": "It flies! WITCHCRAFT!"
+  },
+  {
+    "id": 231,
+    "key": "ShroomMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 232,
+    "key": "ShroomMinecartLegacyUnused",
+    "name": "Shroom Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 233,
+    "key": "AmethystMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 234,
+    "key": "AmethystMinecartLegacyUnused",
+    "name": "Amethyst Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 235,
+    "key": "TopazMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 236,
+    "key": "TopazMinecartLegacyUnused",
+    "name": "Topaz Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 237,
+    "key": "SapphireMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 238,
+    "key": "SapphireMinecartLegacyUnused",
+    "name": "Sapphire Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 239,
+    "key": "EmeraldMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 240,
+    "key": "EmeraldMinecartLegacyUnused",
+    "name": "Emerald Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 241,
+    "key": "RubyMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 242,
+    "key": "RubyMinecartLegacyUnused",
+    "name": "Ruby Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 243,
+    "key": "DiamondMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 244,
+    "key": "DiamondMinecartLegacyUnused",
+    "name": "Diamond Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 245,
+    "key": "AmberMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 246,
+    "key": "AmberMinecartLegacyUnused",
+    "name": "Amber Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 247,
+    "key": "BeetleMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 248,
+    "key": "BeetleMinecartLegacyUnused",
+    "name": "Beetle Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 249,
+    "key": "MeowmereMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 250,
+    "key": "MeowmereMinecartLegacyUnused",
+    "name": "Meowmere Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 251,
+    "key": "PartyMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 252,
+    "key": "PartyMinecartLegacyUnused",
+    "name": "Party Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 253,
+    "key": "PirateMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 254,
+    "key": "PirateMinecartLegacyUnused",
+    "name": "Pirate Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 255,
+    "key": "SteampunkMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 256,
+    "key": "SteampunkMinecartLegacyUnused",
+    "name": "Steampunk Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 257,
+    "key": "Lucky",
+    "name": "Lucky",
+    "description": "You are feeling pretty lucky"
+  },
+  {
+    "id": 258,
+    "key": "LilHarpy",
+    "name": "Lil' Harpy",
+    "description": "Cuteness from above"
+  },
+  {
+    "id": 259,
+    "key": "FennecFox",
+    "name": "Fennec Fox",
+    "description": "What does the fox say? Better yet, what does the fox HEAR?!"
+  },
+  {
+    "id": 260,
+    "key": "GlitteryButterfly",
+    "name": "Glittery Butterfly",
+    "description": "Truly, truly outrageous"
+  },
+  {
+    "id": 261,
+    "key": "BabyImp",
+    "name": "Baby Imp",
+    "description": "Just wait till his terrible twos!"
+  },
+  {
+    "id": 262,
+    "key": "BabyRedPanda",
+    "name": "Baby Red Panda",
+    "description": "A baby red panda is following you"
+  },
+  {
+    "id": 263,
+    "key": "StormTiger",
+    "name": "Desert Tiger",
+    "description": "The desert tiger will fight beside you"
+  },
+  {
+    "id": 264,
+    "key": "Plantero",
+    "name": "Plantero",
+    "description": "Little Plantero is following you"
+  },
+  {
+    "id": 265,
+    "key": "Flamingo",
+    "name": "Flamingo",
+    "description": "Flamingogogo"
+  },
+  {
+    "id": 266,
+    "key": "DynamiteKitten",
+    "name": "Dynamite Kitten",
+    "description": "Not for use in cannons"
+  },
+  {
+    "id": 267,
+    "key": "BabyWerewolf",
+    "name": "Baby Werewolf",
+    "description": "A baby werewolf is following you"
+  },
+  {
+    "id": 268,
+    "key": "ShadowMimic",
+    "name": "Shadow Mimic",
+    "description": "A shadow mimic is following you"
+  },
+  {
+    "id": 269,
+    "key": "CoffinMinecart",
+    "name": "Minecart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 270,
+    "key": "CoffinMinecartLegacyUnused",
+    "name": "Coffin Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 271,
+    "key": "Smolstar",
+    "name": "Enchanted Daggers",
+    "description": "Death by a thousand cuts"
+  },
+  {
+    "id": 272,
+    "key": "DiggingMoleMinecart",
+    "name": "Digging Molecart",
+    "description": "The Molecart will dig for you"
+  },
+  {
+    "id": 273,
+    "key": "DiggingMoleMinecartLegacyUnused",
+    "name": "Digging Mole Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 274,
+    "key": "VoltBunny",
+    "name": "Volt Bunny",
+    "description": "A volt bunny is ecstatic about you"
+  },
+  {
+    "id": 275,
+    "key": "PaintedHorseMount",
+    "name": "Painted Horse Mount",
+    "description": "Riding a Painted Horse"
+  },
+  {
+    "id": 276,
+    "key": "MajesticHorseMount",
+    "name": "Majestic Horse Mount",
+    "description": "Riding a Majestic Horse"
+  },
+  {
+    "id": 277,
+    "key": "DarkHorseMount",
+    "name": "Dark Horse Mount",
+    "description": "Riding a Dark Horse"
+  },
+  {
+    "id": 278,
+    "key": "PogoStickMount",
+    "name": "Pogo Stick Mount",
+    "description": "Kss-shik! Kss-shik! Kss-shik!"
+  },
+  {
+    "id": 279,
+    "key": "PirateShipMount",
+    "name": "Pirate Ship Mount",
+    "description": "You're the captain now"
+  },
+  {
+    "id": 280,
+    "key": "SpookyWoodMount",
+    "name": "Tree Mount",
+    "description": "Run, forest, run!"
+  },
+  {
+    "id": 281,
+    "key": "SantankMount",
+    "name": "Santank Mount",
+    "description": "Crossing off the naughty list..."
+  },
+  {
+    "id": 282,
+    "key": "WallOfFleshGoatMount",
+    "name": "Goat Mount",
+    "description": "This ride is totally metal!"
+  },
+  {
+    "id": 283,
+    "key": "DarkMageBookMount",
+    "name": "Book Mount",
+    "description": "The Book is now helping in your guidance"
+  },
+  {
+    "id": 284,
+    "key": "KingSlimePet",
+    "name": "Slime Prince",
+    "description": "He answers to a higher authority"
+  },
+  {
+    "id": 285,
+    "key": "EyeOfCthulhuPet",
+    "name": "Suspicious Eye",
+    "description": "Just keepin' an eye out..."
+  },
+  {
+    "id": 286,
+    "key": "EaterOfWorldsPet",
+    "name": "Eater of Worms",
+    "description": "May ruin several backyards"
+  },
+  {
+    "id": 287,
+    "key": "BrainOfCthulhuPet",
+    "name": "Spider Brain",
+    "description": "It's crawling around... icky"
+  },
+  {
+    "id": 288,
+    "key": "SkeletronPet",
+    "name": "Skeletron Jr.",
+    "description": "Skeletron Jr. Is following you"
+  },
+  {
+    "id": 289,
+    "key": "QueenBeePet",
+    "name": "Honey Bee",
+    "description": "A honey bee is following you"
+  },
+  {
+    "id": 290,
+    "key": "DestroyerPet",
+    "name": "Destroyer-Lite",
+    "description": "For destruction on the go"
+  },
+  {
+    "id": 291,
+    "key": "TwinsPet",
+    "name": "Rez and Spaz",
+    "description": "You have special eyes!"
+  },
+  {
+    "id": 292,
+    "key": "SkeletronPrimePet",
+    "name": "Mini Prime",
+    "description": "Each tool can commit murder"
+  },
+  {
+    "id": 293,
+    "key": "PlanteraPet",
+    "name": "Plantera Seedling",
+    "description": "What exactly does it eat, anyway?"
+  },
+  {
+    "id": 294,
+    "key": "GolemPet",
+    "name": "Toy Golem",
+    "description": "Got myself a crying, talking, sleeping, walking, living idol!"
+  },
+  {
+    "id": 295,
+    "key": "DukeFishronPet",
+    "name": "Tiny Fishron",
+    "description": "A sea-green marquess of the abyss"
+  },
+  {
+    "id": 296,
+    "key": "LunaticCultistPet",
+    "name": "Phantasmal Dragon",
+    "description": "It keeps looking at the Moon"
+  },
+  {
+    "id": 297,
+    "key": "MoonLordPet",
+    "name": "Moonling",
+    "description": "A friend from beyond"
+  },
+  {
+    "id": 298,
+    "key": "FairyQueenPet",
+    "name": "Fairy Princess",
+    "description": "The light of the fair folk illuminates all"
+  },
+  {
+    "id": 299,
+    "key": "PumpkingPet",
+    "name": "Jack 'O Lantern",
+    "description": "A small Jack 'O Lantern is fiendishly lighting the way"
+  },
+  {
+    "id": 300,
+    "key": "EverscreamPet",
+    "name": "Everscream Sapling",
+    "description": "Taking the tree for a walk!"
+  },
+  {
+    "id": 301,
+    "key": "IceQueenPet",
+    "name": "Ice Queen",
+    "description": "Ice Queen has been reborn as your companion"
+  },
+  {
+    "id": 302,
+    "key": "MartianPet",
+    "name": "Alien Skater",
+    "description": "How do you do, fellow humans?"
+  },
+  {
+    "id": 303,
+    "key": "DD2OgrePet",
+    "name": "Baby Ogre",
+    "description": "He's got a big stick and he doesn't know how to use it"
+  },
+  {
+    "id": 304,
+    "key": "DD2BetsyPet",
+    "name": "Itsy Betsy",
+    "description": "Itsy Betsy is following you"
+  },
+  {
+    "id": 305,
+    "key": "LavaSharkMount",
+    "name": "Lava Shark Mount",
+    "description": "Surfing the molten seas!"
+  },
+  {
+    "id": 306,
+    "key": "TitaniumStorm",
+    "name": "Titanium Barrier",
+    "description": "Defensive shards surround you"
+  },
+  {
+    "id": 307,
+    "key": "BlandWhipEnemyDebuff",
+    "name": "Bland Whip Enemy Debuff",
+    "description": ""
+  },
+  {
+    "id": 308,
+    "key": "SwordWhipPlayerBuff",
+    "name": "Durendal's Blessing",
+    "description": "Whip speed is increased"
+  },
+  {
+    "id": 309,
+    "key": "SwordWhipNPCDebuff",
+    "name": "Sword Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 310,
+    "key": "ScytheWhipEnemyDebuff",
+    "name": "Scythe Whip Enemy Debuff",
+    "description": ""
+  },
+  {
+    "id": 311,
+    "key": "ScytheWhipPlayerBuff",
+    "name": "Harvest Time",
+    "description": "Whip speed is increased"
+  },
+  {
+    "id": 312,
+    "key": "CoolWhipPlayerBuff",
+    "name": "A Nice Buff",
+    "description": "Summons a snowflake to fight for you"
+  },
+  {
+    "id": 313,
+    "key": "FlameWhipEnemyDebuff",
+    "name": "Flame Whip Enemy Debuff",
+    "description": ""
+  },
+  {
+    "id": 314,
+    "key": "ThornWhipPlayerBuff",
+    "name": "Jungle's Fury",
+    "description": "Whip speed is increased"
+  },
+  {
+    "id": 315,
+    "key": "ThornWhipNPCDebuff",
+    "name": "Thorn Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 316,
+    "key": "RainbowWhipNPCDebuff",
+    "name": "Rainbow Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 317,
+    "key": "QueenSlimePet",
+    "name": "Slime Princess",
+    "description": "She is the higher authority"
+  },
+  {
+    "id": 318,
+    "key": "QueenSlimeMount",
+    "name": "Winged Slime Mount",
+    "description": "BOING FLAP BOING!"
+  },
+  {
+    "id": 319,
+    "key": "MaceWhipNPCDebuff",
+    "name": "Mace Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 320,
+    "key": "GelBalloonBuff",
+    "name": "Sparkle Slime",
+    "description": "You are slimy and sparkly"
+  },
+  {
+    "id": 321,
+    "key": "BrainOfConfusionBuff",
+    "name": "Cerebral Mindtrick",
+    "description": "Increased critical chance and minion damage"
+  },
+  {
+    "id": 322,
+    "key": "EmpressBlade",
+    "name": "Terraprisma",
+    "description": "The Blades of the Empress will fight for you"
+  },
+  {
+    "id": 323,
+    "key": "OnFire3",
+    "name": "Hellfire",
+    "description": "Slowly losing life"
+  },
+  {
+    "id": 324,
+    "key": "Frostburn2",
+    "name": "Frostbite",
+    "description": "It's either really hot or really cold. Either way it REALLY hurts"
+  },
+  {
+    "id": 325,
+    "key": "FlinxMinion",
+    "name": "Flinx",
+    "description": "The snow flinx will fight for you"
+  },
+  {
+    "id": 326,
+    "key": "BoneWhipNPCDebuff",
+    "name": "Bone Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 327,
+    "key": "BerniePet",
+    "name": "Bernie",
+    "description": "You're always there for me, Bernie"
+  },
+  {
+    "id": 328,
+    "key": "GlommerPet",
+    "name": "Glommer",
+    "description": "It's fuzzy! And slimy..."
+  },
+  {
+    "id": 329,
+    "key": "DeerclopsPet",
+    "name": "Tiny Deerclops",
+    "description": "Holy crap!"
+  },
+  {
+    "id": 330,
+    "key": "PigPet",
+    "name": "Pig",
+    "description": "Walking back bacon!"
+  },
+  {
+    "id": 331,
+    "key": "ChesterPet",
+    "name": "Chester",
+    "description": "Otto von Chesterfield, Esquire"
+  },
+  {
+    "id": 332,
+    "key": "NeutralHunger",
+    "name": "Peckish",
+    "description": "You could eat, but it's not so bad."
+  },
+  {
+    "id": 333,
+    "key": "Hunger",
+    "name": "Hungry",
+    "description": "You are quite hungry and feeling weak."
+  },
+  {
+    "id": 334,
+    "key": "Starving",
+    "name": "Starving",
+    "description": "You are starving to death! Eat immediately!"
+  },
+  {
+    "id": 335,
+    "key": "AbigailMinion",
+    "name": "Abigail",
+    "description": "Abigail will fight to protect you"
+  },
+  {
+    "id": 336,
+    "key": "HeartyMeal",
+    "name": "Hearty Meal",
+    "description": "Increased Life Regeneration"
+  },
+  {
+    "id": 337,
+    "key": "TentacleSpike",
+    "name": "Tentacle Spike",
+    "description": ""
+  },
+  {
+    "id": 338,
+    "key": "FartMinecart",
+    "name": "Fart Kart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 339,
+    "key": "FartMinecartLegacyUnused",
+    "name": "Fart Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 340,
+    "key": "CoolWhipNPCDebuff",
+    "name": "Cool Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 341,
+    "key": "DualSlimePet",
+    "name": "Slime Royals",
+    "description": "The final authority, they will unite the kingdoms!"
+  },
+  {
+    "id": 342,
+    "key": "WolfMount",
+    "name": "Blessing of the Moon",
+    "description": "You turned into a wolf!"
+  },
+  {
+    "id": 343,
+    "key": "BiomeSight",
+    "name": "Biome Sight",
+    "description": "Shows the location of infected blocks"
+  },
+  {
+    "id": 344,
+    "key": "BloodButcherer",
+    "name": "Blood Butchered",
+    "description": "Bleeding out rapidly"
+  },
+  {
+    "id": 345,
+    "key": "JunimoPet",
+    "name": "Junimo",
+    "description": "Keeper of the Forest"
+  },
+  {
+    "id": 346,
+    "key": "TerraFartMinecart",
+    "name": "Terra Fart Kart",
+    "description": "Riding in a minecart"
+  },
+  {
+    "id": 347,
+    "key": "TerraFartMinecartLegacyUnused",
+    "name": "Terra Fart Minecart Legacy Unused",
+    "description": ""
+  },
+  {
+    "id": 348,
+    "key": "WarTable",
+    "name": "Strategist",
+    "description": "Increased your max number of sentries by 1"
+  },
+  {
+    "id": 349,
+    "key": "BlueChickenPet",
+    "name": "Blue Chicken",
+    "description": "The nametag says 'Shane'"
+  },
+  {
+    "id": 350,
+    "key": "ShadowCandle",
+    "name": "Shadow Candle",
+    "description": "Dispels the peace of towns"
+  },
+  {
+    "id": 351,
+    "key": "Spiffo",
+    "name": "Spiffo",
+    "description": "'This is how you died'"
+  },
+  {
+    "id": 352,
+    "key": "CavelingGardener",
+    "name": "Caveling Gardener",
+    "description": "Huk arrr gruk tu!"
+  },
+  {
+    "id": 353,
+    "key": "Shimmer",
+    "name": "Shimmering",
+    "description": "You've gone insubstantial!"
+  },
+  {
+    "id": 354,
+    "key": "DirtiestBlock",
+    "name": "The Dirtiest Block",
+    "description": "You can tell by all the extra dirt"
+  },
+  {
+    "id": 355,
+    "key": "DeadCellsMushroomBoiMinion",
+    "name": "Mushroom Boi!",
+    "description": "Mushroom Boi will fight for you"
+  },
+  {
+    "id": 356,
+    "key": "DeadCellsSwarmBiter",
+    "name": "Swarm Biter",
+    "description": "Chomp chomp"
+  },
+  {
+    "id": 357,
+    "key": "CobWhipNPCDebuff",
+    "name": "Cob Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 358,
+    "key": "CorruptWhipNPCDebuff",
+    "name": "Corrupt Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 359,
+    "key": "CrimsonWhipNPCDebuff",
+    "name": "Crimson Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 360,
+    "key": "MeteorWhipNPCDebuff",
+    "name": "Meteor Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 361,
+    "key": "FlowerWhipNPCDebuff",
+    "name": "Flower Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 362,
+    "key": "EelWhipNPCDebuff",
+    "name": "Eel Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 363,
+    "key": "ConstellationWhipNPCDebuff",
+    "name": "Constellation Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 364,
+    "key": "MoonLordWhipNPCDebuff",
+    "name": "Moon Lord Whip NPCDebuff",
+    "description": ""
+  },
+  {
+    "id": 365,
+    "key": "CobWhipPlayerBuff",
+    "name": "Whip Spider",
+    "description": "Summons a spider to fight for you"
+  },
+  {
+    "id": 366,
+    "key": "DeadCellsPotionStation",
+    "name": "Alchemic Enhancement",
+    "description": "Fresh buffs last longer"
+  },
+  {
+    "id": 367,
+    "key": "FlowerWhipNPCDebuffProc",
+    "name": "Flower Whip NPCDebuff Proc",
+    "description": ""
+  },
+  {
+    "id": 368,
+    "key": "MoonLordWhipNPCDebuffProc",
+    "name": "Moon Lord Whip NPCDebuff Proc",
+    "description": ""
+  },
+  {
+    "id": 369,
+    "key": "MeteorWhipNPCDebuffProc",
+    "name": "Meteor Whip NPCDebuff Proc",
+    "description": ""
+  },
+  {
+    "id": 370,
+    "key": "VelociraptorMount",
+    "name": "Instinct of the Raptor",
+    "description": "You turned into a velociraptor!"
+  },
+  {
+    "id": 371,
+    "key": "Pufferfish",
+    "name": "Pufferfish",
+    "description": "A friendly pufferfish is following you"
+  },
+  {
+    "id": 372,
+    "key": "AxeFairyPet",
+    "name": "Cenaxe",
+    "description": "Axing the real questions"
+  },
+  {
+    "id": 373,
+    "key": "BoulderPet",
+    "name": "Friendly Boulder",
+    "description": "A friendly boulder is rolling around with you"
+  },
+  {
+    "id": 374,
+    "key": "RatMount",
+    "name": "Nature of the Rat",
+    "description": "You turned into a rat!"
+  },
+  {
+    "id": 375,
+    "key": "Hemorrhage",
+    "name": "Hemorrhage",
+    "description": "Bleeding profusely"
+  },
+  {
+    "id": 376,
+    "key": "TorchGodPotion",
+    "name": "Torch Blessing",
+    "description": "Nearby torches will be converted to match the biome"
+  },
+  {
+    "id": 377,
+    "key": "BatMount",
+    "name": "Curse of the Bat",
+    "description": "You turned into a bat!"
+  },
+  {
+    "id": 378,
+    "key": "RollerSkatesMount",
+    "name": "Blue Roller Skates",
+    "description": "This is how I roll"
+  },
+  {
+    "id": 379,
+    "key": "RollerSkatesGreenMount",
+    "name": "Green Roller Skates",
+    "description": "This is how I roll"
+  },
+  {
+    "id": 380,
+    "key": "RollerSkatesWhiteMount",
+    "name": "Classic Roller Skates",
+    "description": "This is how I roll"
+  },
+  {
+    "id": 381,
+    "key": "RollerSkatesPinkMount",
+    "name": "Party Roller Skates",
+    "description": "This is how I roll"
+  },
+  {
+    "id": 382,
+    "key": "RainbowBoulderPet",
+    "name": "Friendly Rainbow Boulder",
+    "description": "A friendly rainbow boulder is rolling around with you"
+  },
+  {
+    "id": 383,
+    "key": "Kite",
+    "name": "High Spirits",
+    "description": "Slightly increased movement speed, mining speed, and placement speed"
+  },
+  {
+    "id": 384,
+    "key": "PixieMount",
+    "name": "Form of the Fae",
+    "description": "You turned into a pixie!"
+  },
+  {
+    "id": 385,
+    "key": "PalworldMinionCattiva",
+    "name": "Cattiva",
+    "description": "Cattiva will fight for you"
+  },
+  {
+    "id": 386,
+    "key": "PalworldMinionFoxsparks",
+    "name": "Foxparks",
+    "description": "Foxparks will fight for you"
+  },
+  {
+    "id": 387,
+    "key": "PalworldPetChillet",
+    "name": "Chillet",
+    "description": "Chillet is exploring with you\nThe movement is quite intense!"
+  },
+  {
+    "id": 388,
+    "key": "PalworldPetChilletIgnis",
+    "name": "Chillet Ignis",
+    "description": "Chillet Ignis is exploring with you\nBe careful of petting it too long, or sparks WILL start flying!"
+  },
+  {
+    "id": 389,
+    "key": "PalworldMinionTrustyCattiva",
+    "name": "Palworld Minion Trusty Cattiva",
+    "description": ""
+  },
+  {
+    "id": 390,
+    "key": "PalworldMinionTrustyFoxsparks",
+    "name": "Palworld Minion Trusty Foxsparks",
+    "description": ""
+  },
+  {
+    "id": 391,
+    "key": "PalworldMountTrustyChillet",
+    "name": "Palworld Mount Trusty Chillet",
+    "description": ""
+  },
+  {
+    "id": 392,
+    "key": "PalworldMountTrustyChilletIgnis",
+    "name": "Palworld Mount Trusty Chillet Ignis",
+    "description": ""
+  },
+  {
+    "id": 393,
+    "key": "ClayPotMinion",
+    "name": "Clay Pot Minion",
+    "description": ""
+  },
+  {
+    "id": 394,
+    "key": "ForbiddenMinion",
+    "name": "Forbidden Minion",
+    "description": ""
+  },
+  {
+    "id": 395,
+    "key": "PotentAcid",
+    "name": "Potent Acid",
+    "description": ""
+  },
+  {
+    "id": 396,
+    "key": "ManaHeat",
+    "name": "Mana Heat",
+    "description": ""
+  },
+  {
+    "id": 397,
+    "key": "ChlorophyteSpore",
+    "name": "Chlorophyte Spore",
+    "description": ""
+  },
+  {
+    "id": 398,
+    "key": "AcceleratePoisons",
+    "name": "Accelerate Poisons",
+    "description": ""
+  },
+  {
+    "id": 399,
+    "key": "BlueLightning",
+    "name": "Blue Lightning",
+    "description": ""
+  },
+  {
+    "id": 400,
+    "key": "RedLightning",
+    "name": "Red Lightning",
+    "description": ""
+  }
+]

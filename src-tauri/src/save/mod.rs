@@ -9,7 +9,10 @@ use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 use thiserror::Error;
 
-pub use v325::{CharacterDocument, EquipmentDocument, ItemSlot, PlayerDocument, StorageDocument};
+pub use v325::{
+    CharacterDocument, EffectsDocument, EquipmentDocument, ItemSlot, JourneyDocument,
+    PlayerDocument, SpawnPoint, StorageDocument,
+};
 
 #[derive(Debug, Error)]
 pub enum SaveError {
@@ -46,6 +49,9 @@ pub struct SavePlayerRequest {
     pub path: String,
     pub source_hash: String,
     pub character: CharacterDocument,
+    pub effects: EffectsDocument,
+    pub journey: JourneyDocument,
+    pub spawn_points: Vec<SpawnPoint>,
     pub inventory: Vec<ItemSlot>,
     pub equipment: EquipmentDocument,
     pub storage: StorageDocument,
@@ -120,6 +126,9 @@ pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError>
     let path = checked_path(&request.path)?;
     v325::validate_document(
         &request.character,
+        &request.effects,
+        &request.journey,
+        &request.spawn_points,
         &request.inventory,
         &request.equipment,
         &request.storage,
@@ -132,10 +141,15 @@ pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError>
     let plaintext = crypto::decrypt(&encrypted)?;
     let patched = v325::patch_document(
         &plaintext,
-        &request.character,
-        &request.inventory,
-        &request.equipment,
-        &request.storage,
+        v325::PatchDocument {
+            character: &request.character,
+            effects: &request.effects,
+            journey: &request.journey,
+            spawn_points: &request.spawn_points,
+            inventory: &request.inventory,
+            equipment: &request.equipment,
+            storage: &request.storage,
+        },
     )?;
     let staged_encrypted = crypto::encrypt(&patched)?;
 
@@ -167,13 +181,16 @@ pub fn save_player(request: SavePlayerRequest) -> Result<SaveReceipt, SaveError>
     }
     let verified = v325::parse(&stage_path, &hash(&staged_encrypted), &staged_plaintext)?;
     if verified.character != request.character
+        || verified.effects != request.effects
+        || verified.journey != request.journey
+        || verified.spawn_points != request.spawn_points
         || verified.inventory != request.inventory
         || verified.equipment != request.equipment
         || verified.storage != request.storage
     {
         let _ = fs::remove_file(&stage_path);
         return Err(SaveError::Verification(
-            "re-opened character or item data does not match the requested edit".into(),
+            "re-opened character data does not match the requested edit".into(),
         ));
     }
 
@@ -242,6 +259,9 @@ mod integration_tests {
             path: copy.to_string_lossy().into_owned(),
             source_hash: before.source_hash.clone(),
             character: before.character.clone(),
+            effects: before.effects.clone(),
+            journey: before.journey.clone(),
+            spawn_points: before.spawn_points.clone(),
             inventory: before.inventory.clone(),
             equipment: before.equipment.clone(),
             storage: before.storage.clone(),
@@ -256,7 +276,7 @@ mod integration_tests {
         assert_eq!(before.storage, after.storage);
         assert!(Path::new(&receipt.backup_path).exists());
         eprintln!(
-            "verified {} v{} with inventory, equipment, and storage records; backup created",
+            "verified {} v{} across character, item, effect, Journey, and spawn records; backup created",
             after.character.name, after.version
         );
     }
@@ -309,6 +329,9 @@ mod integration_tests {
             path: copy.to_string_lossy().into_owned(),
             source_hash: before.source_hash.clone(),
             character: before.character.clone(),
+            effects: before.effects.clone(),
+            journey: before.journey.clone(),
+            spawn_points: before.spawn_points.clone(),
             inventory: before.inventory.clone(),
             equipment: before.equipment.clone(),
             storage: before.storage.clone(),
@@ -343,6 +366,9 @@ mod integration_tests {
             path: copy.to_string_lossy().into_owned(),
             source_hash: before.source_hash.clone(),
             character: before.character.clone(),
+            effects: before.effects.clone(),
+            journey: before.journey.clone(),
+            spawn_points: before.spawn_points.clone(),
             inventory: before.inventory.clone(),
             equipment: before.equipment.clone(),
             storage: before.storage.clone(),
@@ -353,5 +379,68 @@ mod integration_tests {
         assert_eq!(after.inventory, before.inventory);
         assert_eq!(after.equipment, before.equipment);
         assert_eq!(after.storage, before.storage);
+    }
+
+    #[test]
+    fn external_fixture_mutates_remaining_character_systems_when_configured() {
+        let Ok(source) = std::env::var("PLRFORGE_FIXTURE") else {
+            return;
+        };
+        let temporary = tempfile::tempdir().unwrap();
+        let copy = temporary.path().join("systems-fixture.plr");
+        fs::copy(source, &copy).unwrap();
+
+        let mut before = load_path(&copy).unwrap();
+        let buff_slot = before
+            .effects
+            .buffs
+            .iter()
+            .position(|buff| buff.buff_id == 0)
+            .expect("fixture needs an empty buff slot");
+        before.effects.buffs[buff_slot].buff_id = 5;
+        before.effects.buffs[buff_slot].time = 3600;
+        before.spawn_points.push(SpawnPoint {
+            x: 123,
+            y: 456,
+            world_id: 789,
+            world_name: "PlrForge QA".into(),
+        });
+        if let Some(entry) = before
+            .journey
+            .research
+            .iter_mut()
+            .find(|entry| entry.persistent_id == "MagicLantern")
+        {
+            entry.count = 9999;
+        } else {
+            before.journey.research.push(v325::ResearchEntry {
+                persistent_id: "MagicLantern".into(),
+                count: 9999,
+            });
+        }
+        before.journey.powers.godmode = !before.journey.powers.godmode;
+        before.journey.powers.far_placement_range = !before.journey.powers.far_placement_range;
+        before.journey.powers.spawn_rate = 0.25;
+        before.journey.unlocked_super_cart = !before.journey.unlocked_super_cart;
+        before.journey.enabled_super_cart = !before.journey.enabled_super_cart;
+
+        save_player(SavePlayerRequest {
+            path: copy.to_string_lossy().into_owned(),
+            source_hash: before.source_hash.clone(),
+            character: before.character.clone(),
+            effects: before.effects.clone(),
+            journey: before.journey.clone(),
+            spawn_points: before.spawn_points.clone(),
+            inventory: before.inventory.clone(),
+            equipment: before.equipment.clone(),
+            storage: before.storage.clone(),
+        })
+        .unwrap();
+        let after = load_path(&copy).unwrap();
+        assert_eq!(after.effects, before.effects);
+        assert_eq!(after.spawn_points, before.spawn_points);
+        assert_eq!(after.journey, before.journey);
+        assert_eq!(after.character, before.character);
+        assert_eq!(after.inventory, before.inventory);
     }
 }

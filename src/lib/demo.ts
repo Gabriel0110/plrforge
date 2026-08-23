@@ -70,6 +70,22 @@ export const demoPlayer: PlayerDocument = {
     },
     counters: { taxMoney: 125000, pveDeaths: 14, pvpDeaths: 2 },
   },
+  effects: {
+    buffs: Array.from({ length: 44 }, (_, slot) => ({ slot, buffId: 0, time: 0 })),
+  },
+  journey: {
+    research: [
+      { persistentId: "MagicLantern", count: 1 },
+      { persistentId: "IronPickaxe", count: 1 },
+    ],
+    powers: { godmode: false, farPlacementRange: true, spawnRate: 0.5 },
+    serializedPowerIds: [5, 11, 14],
+    unlockedSuperCart: false,
+    enabledSuperCart: true,
+  },
+  spawnPoints: [
+    { x: 1240, y: 388, worldId: 11235813, worldName: "Verdant Reach" },
+  ],
   inventory,
   equipment: {
     currentLoadoutIndex: 0,

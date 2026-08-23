@@ -18,12 +18,15 @@ import {
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { EmptyState } from "./components/EmptyState";
 import { CharacterPanel } from "./components/CharacterPanel";
+import { EffectsPanel } from "./components/EffectsPanel";
 import { InventoryGrid } from "./components/InventoryGrid";
 import { ItemInspector } from "./components/ItemInspector";
 import { ItemSearch } from "./components/ItemSearch";
+import { JourneyPanel } from "./components/JourneyPanel";
 import { LoadoutsPanel } from "./components/LoadoutsPanel";
 import { LoadingState } from "./components/LoadingState";
 import { StoragePanel } from "./components/StoragePanel";
+import { SpawnPointsPanel } from "./components/SpawnPointsPanel";
 import { acceptsItem, findItem, itemName } from "./data/catalog";
 import { demoPlayer } from "./lib/demo";
 import {
@@ -78,9 +81,9 @@ const navigation: { id: View; label: string; icon: typeof IdentificationCard; ph
   { id: "loadouts", label: "Loadouts", icon: ShieldCheck },
   { id: "inventory", label: "Inventory", icon: Backpack },
   { id: "storage", label: "Storage", icon: Database },
-  { id: "effects", label: "Effects", icon: Flask, phase: "Phase 3" },
-  { id: "journey", label: "Journey", icon: Sparkle, phase: "Phase 3" },
-  { id: "spawns", label: "Spawn points", icon: MapPin, phase: "Phase 3" },
+  { id: "effects", label: "Effects", icon: Flask },
+  { id: "journey", label: "Journey", icon: Sparkle },
+  { id: "spawns", label: "Spawn points", icon: MapPin },
 ];
 
 function makeChangeId() {
@@ -137,16 +140,6 @@ function SideRail({ view, onView }: { view: View; onView: (view: View) => void }
         <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[12px] text-white/42 transition hover:bg-white/[0.04] hover:text-white/70"><GearSix className="size-[17px]" />Settings</button>
       </div>
     </nav>
-  );
-}
-
-function PlannedView({ view }: { view: View }) {
-  const section = navigation.find((item) => item.id === view)!;
-  const Icon = section.icon;
-  return (
-    <div className="grid min-h-0 place-items-center p-10">
-      <div className="max-w-md"><Icon className="size-7 text-emerald-300/70" /><p className="mt-5 font-mono text-[10px] uppercase tracking-[0.15em] text-white/32">{section.phase} implementation surface</p><h1 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white/90">{section.label}</h1><p className="mt-3 text-sm leading-6 text-white/42">This section remains read-only until its complete v325 write contract is proven. Unsupported writes fail closed instead of guessing at offsets.</p></div>
-    </div>
   );
 }
 
@@ -220,6 +213,14 @@ export default function App() {
     dispatch({
       type: "change",
       document: { ...editorDocument, character },
+      entry: { id: makeChangeId(), description, location },
+    });
+  }, [editorDocument]);
+
+  const applySystemChange = useCallback((patch: Partial<EditableDocument>, description: string, location: string) => {
+    dispatch({
+      type: "change",
+      document: { ...editorDocument, ...patch },
       entry: { id: makeChangeId(), description, location },
     });
   }, [editorDocument]);
@@ -343,7 +344,10 @@ export default function App() {
                 </main>
                 <ItemInspector item={selectedItem} slotLabel={targetLabel} canStack={canStack(selected)} canFavorite={canFavorite(selected)} onPatch={patchSelected} onRemove={removeSelected} onCopy={() => setClipboard({ item: selectedItem, source: selected, mode: "copy" })} onMove={() => setClipboard({ item: selectedItem, source: selected, mode: "move" })} onPaste={paste} pasteLabel={clipboard && !sameLocation(clipboard.source, selected) ? itemName(clipboard.item.itemId) : null} />
               </div>
-            ) : view === "overview" ? <CharacterPanel character={editor.character} onChange={applyCharacterChange} /> : <PlannedView view={view} />}
+            ) : view === "overview" ? <CharacterPanel character={editor.character} onChange={applyCharacterChange} />
+              : view === "effects" ? <EffectsPanel effects={editor.effects} onChange={(effects, description, location) => applySystemChange({ effects }, description, location)} />
+              : view === "journey" ? <JourneyPanel journey={editor.journey} difficulty={editor.character.difficulty} onChange={(journey, description, location) => applySystemChange({ journey }, description, location)} />
+              : <SpawnPointsPanel points={editor.spawnPoints} onChange={(spawnPoints, description, location) => applySystemChange({ spawnPoints }, description, location)} />}
 
             <footer className="border-t border-white/[0.08] bg-[#111513]">
               {(error || message || clipboard) && <div className={`flex items-start gap-2 border-b border-white/[0.06] px-4 py-2 text-[11px] ${error ? "text-rose-300/84" : "text-white/42"}`}>{error ? <Warning className="mt-px size-3.5 shrink-0" /> : <Check className="mt-px size-3.5 shrink-0 text-emerald-300/70" />}<span className="truncate">{error ?? (clipboard ? `${clipboard.mode === "move" ? "Moving" : "Copied"} ${itemName(clipboard.item.itemId)} from ${locationLabel(clipboard.source)}. Select a destination and paste.` : message)}</span></div>}

@@ -8,7 +8,7 @@ const KEY: [u8; 16] = [
 ];
 
 pub fn decrypt(encrypted: &[u8]) -> Result<Vec<u8>, SaveError> {
-    if encrypted.is_empty() || encrypted.len() % 16 != 0 {
+    if encrypted.is_empty() || !encrypted.len().is_multiple_of(16) {
         return Err(SaveError::Crypto);
     }
     let mut output = encrypted.to_vec();
