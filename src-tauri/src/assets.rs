@@ -12,7 +12,7 @@ use std::{
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
 
-const CACHE_VERSION: &str = "xnb-textures-v4";
+const CACHE_VERSION: &str = "xnb-textures-v6";
 const COMPLETE_MARKER: &str = ".complete";
 
 #[derive(Debug, Error)]
@@ -351,8 +351,7 @@ fn item_frame_count(id: u32) -> u32 {
 }
 
 fn prepare_item_texture(texture: Texture, id: u32) -> Result<Texture, AssetError> {
-    // Terraria's transparent canvas is intentional and keeps the relative scale/alignment of
-    // differently shaped items. Only animation frames are separated; opaque bounds stay intact.
+    // Preserve Terraria's transparent canvas: its padding carries the intended alignment and scale.
     first_item_frame(texture, item_frame_count(id))
 }
 
