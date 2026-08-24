@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 const VERSION: i32 = 325;
+const VERSION_326: i32 = 326;
 const VERSION_317: i32 = 317;
 const VERSION_279: i32 = 279;
 const METADATA_END: usize = 24;
@@ -70,11 +71,17 @@ impl Format {
         voice_pitch: true,
     };
 
+    const V326: Self = Self {
+        version: VERSION_326,
+        ..Self::V325
+    };
+
     fn from_version(version: i32) -> Result<Self, SaveError> {
         match version {
             VERSION_279 => Ok(Self::V279),
             VERSION_317 => Ok(Self::V317),
             VERSION => Ok(Self::V325),
+            VERSION_326 => Ok(Self::V326),
             _ => Err(SaveError::UnsupportedVersion(version)),
         }
     }
@@ -294,6 +301,14 @@ struct Layout {
 
 pub fn parse(path: &Path, source_hash: &str, data: &[u8]) -> Result<PlayerDocument, SaveError> {
     parse_version(path, source_hash, data, VERSION)
+}
+
+pub(super) fn parse_v326(
+    path: &Path,
+    source_hash: &str,
+    data: &[u8],
+) -> Result<PlayerDocument, SaveError> {
+    parse_version(path, source_hash, data, VERSION_326)
 }
 
 pub(super) fn parse_v317(
@@ -617,6 +632,27 @@ pub fn validate_document(
     )
 }
 
+pub(super) fn validate_document_v326(
+    character: &CharacterDocument,
+    effects: &EffectsDocument,
+    journey: &JourneyDocument,
+    spawn_points: &[SpawnPoint],
+    inventory: &[ItemSlot],
+    equipment: &EquipmentDocument,
+    storage: &StorageDocument,
+) -> Result<(), SaveError> {
+    validate_document_version(
+        VERSION_326,
+        character,
+        effects,
+        journey,
+        spawn_points,
+        inventory,
+        equipment,
+        storage,
+    )
+}
+
 pub(super) fn validate_document_v317(
     character: &CharacterDocument,
     effects: &EffectsDocument,
@@ -776,6 +812,13 @@ pub(super) fn patch_document(
     document: PatchDocument<'_>,
 ) -> Result<Vec<u8>, SaveError> {
     patch_document_version(data, document, VERSION)
+}
+
+pub(super) fn patch_document_v326(
+    data: &[u8],
+    document: PatchDocument<'_>,
+) -> Result<Vec<u8>, SaveError> {
+    patch_document_version(data, document, VERSION_326)
 }
 
 pub(super) fn patch_document_v317(
@@ -1911,6 +1954,37 @@ mod tests {
             assert_eq!(layout.misc, layout.inventory + 580);
             assert!(layout.loadouts > layout.banks[3]);
         }
+    }
+
+    #[test]
+    fn v326_uses_the_verified_v325_layout_and_round_trips_exactly() {
+        let data = synthetic_player_for("Hotfix", Format::V326);
+        let before = parse_v326(Path::new("fixture.plr"), "hash", &data).unwrap();
+        assert_eq!(before.version, VERSION_326);
+
+        let patched = patch_document_v326(
+            &data,
+            PatchDocument {
+                character: &before.character,
+                effects: &before.effects,
+                journey: &before.journey,
+                spawn_points: &before.spawn_points,
+                inventory: &before.inventory,
+                equipment: &before.equipment,
+                storage: &before.storage,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(patched, data);
+        let after = parse_v326(Path::new("fixture.plr"), "hash", &patched).unwrap();
+        assert_eq!(after.character, before.character);
+        assert_eq!(after.inventory, before.inventory);
+        assert_eq!(after.equipment, before.equipment);
+        assert_eq!(after.storage, before.storage);
+        assert_eq!(after.effects, before.effects);
+        assert_eq!(after.journey, before.journey);
+        assert_eq!(after.spawn_points, before.spawn_points);
     }
 
     #[test]

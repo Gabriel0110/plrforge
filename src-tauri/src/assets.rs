@@ -330,7 +330,7 @@ fn asset_id(path: &Path) -> Option<u32> {
     path.file_stem()?.to_str()?.split_once('_')?.1.parse().ok()
 }
 
-// Terraria v325 registers these textures as vertical item animations. Food membership mirrors
+// Terraria v326 registers these textures as vertical item animations. Food membership mirrors
 // ItemID.Sets.IsFood from the installed assembly; all registered foods use three frames.
 fn item_frame_count(id: u32) -> u32 {
     match id {

@@ -44,7 +44,7 @@ export function StoragePanel({ storage, container, selected, onContainer, onSele
           ))}
         </div>
       </section>
-      <p className="mt-4 text-[11px] leading-5 text-white/30">Piggy Bank, Safe, and Defender's Forge do not serialize favorite flags in v325. Void Vault does, and PlrForge preserves it.</p>
+      <p className="mt-4 text-[11px] leading-5 text-white/30">Piggy Bank, Safe, and Defender's Forge do not serialize favorite flags. Void Vault does, and PlrForge preserves it.</p>
     </div>
   );
 }

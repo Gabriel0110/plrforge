@@ -16,11 +16,11 @@ The webview never receives encryption keys or raw decrypted payloads. It receive
 
 ## Save engine
 
-The current v279/v317/v325 codec family is intentionally bytes-preserving. A format descriptor models version-gated team, equipment-favorite, research-marker, and voice fields while sharing the verified inventory, storage, buff, spawn, Journey, and loadout machinery. Serialization splices only supported variable records and patches supported fixed records, relocating every dependent offset after each splice so untouched tail bytes remain exact. Variable-length .NET strings are safely re-encoded. Unknown Journey power payloads fail closed before a write is attempted.
+The current v279/v317/v325/v326 codec family is intentionally bytes-preserving. A format descriptor models version-gated team, equipment-favorite, research-marker, and voice fields while sharing the verified inventory, storage, buff, spawn, Journey, and loadout machinery. Serialization splices only supported variable records and patches supported fixed records, relocating every dependent offset after each splice so untouched tail bytes remain exact. Variable-length .NET strings are safely re-encoded. Unknown Journey power payloads fail closed before a write is attempted.
 
 Journey world powers are deliberately absent from the player domain: time, weather, and world-difficulty controls are world-file state. Player files serialize only Godmode (ID 5), extended placement range (ID 11), and the enemy spawn-rate slider (ID 14). The codec preserves which supported records were present and adds one only when that power is edited.
 
-The version registry enables the verified v279, v317, and v325 codecs and rejects all other layouts. Each future codec must implement the same conceptual operations:
+The version registry enables the verified v279, v317, v325, and v326 codecs and rejects all other layouts. Each future codec must implement the same conceptual operations:
 
 - inspect header and compatibility;
 - parse into the normalized domain model;
@@ -48,7 +48,7 @@ PlrForge never ships or fetches Terraria artwork. A native Tauri command discove
 
 The format implementation is grounded in the open-source [TExtract XNB extractor](https://github.com/Antag99/TExtract/blob/master/TExtract/src/com/github/antag99/textract/extract/XnbExtractor.java), uses the audited [`lzxd` Rust decoder](https://docs.rs/lzxd/latest/lzxd/), and follows Tauri's [scoped asset-protocol model](https://v2.tauri.app/security/asset-protocol/).
 
-Animated item sheets are cropped by Terraria v325's exact registered frame rules, including the current `ItemID.Sets.IsFood` membership. Every frame retains Terraria's original transparent canvas because that padding encodes the intended relative item scale and alignment; pixels are never resampled or recolored. Shared React glyph viewports center, contain, and pixel-render the result across inventory, storage, inspector, search, Journey, and Item Catalog surfaces.
+Animated item sheets are cropped by Terraria v326's exact registered frame rules, including the current `ItemID.Sets.IsFood` membership. Every frame retains Terraria's original transparent canvas because that padding encodes the intended relative item scale and alignment; pixels are never resampled or recolored. Shared React glyph viewports center, contain, and pixel-render the result across inventory, storage, inspector, search, Journey, and Item Catalog surfaces.
 
 Extracted PNGs live below the OS application-cache directory. Tauri's asset protocol is enabled only for `$APPCACHE/terraria-assets/**/*`; original game resources and unrelated filesystem locations are never exposed to the webview. A completed versioned fingerprint is reused on later launches, while a changed installation or normalization version produces a new cache. Missing or invalid assets degrade to deterministic text glyphs and never block save editing.
 
@@ -58,7 +58,7 @@ The bundled `PlrForge.Metadata.exe` helper is built from `metadata-helper/Progra
 
 ## Testing strategy
 
-- Rust unit tests cover 7-bit strings, variable-length Unicode names, dynamic v325 offsets, character validation, all character-field round trips, active/inactive loadout mapping, equipment stack validation, buff/spawn/research/Journey mutation, encryption and zero-padding round trips, untouched-tail assertions after multiple variable-length splices, strict XNB texture parsing, LZX decoding against locally installed real assets when available, animation-frame cropping, and Steam library-path parsing.
+- Rust unit tests cover 7-bit strings, variable-length Unicode names, dynamic modern-format offsets, character validation, all character-field round trips, active/inactive loadout mapping, equipment stack validation, buff/spawn/research/Journey mutation, encryption and zero-padding round trips, untouched-tail assertions after multiple variable-length splices, strict XNB texture parsing, LZX decoding against locally installed real assets when available, animation-frame cropping, and Steam library-path parsing.
 - Golden fixtures should be synthetic or explicitly user-approved and must never contain personal player files in source control.
 - React tests cover the Character, Effects, Journey, Spawn Points, Backups, Settings, and Item Catalog workspaces, item search, category derivation, slot compatibility, catalog insertion, slot replacement, validation, restore confirmation, shared undo/redo, loading, empty, and error states.
 - Native smoke tests load a copied fixture, change character, item, buff, spawn, research, Journey-power, and Super Cart regions, save it, re-open it, compare the complete normalized models, list the verified backup, restore it, and verify the pre-restore safety copy.

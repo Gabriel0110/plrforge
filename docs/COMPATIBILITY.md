@@ -7,8 +7,9 @@ PlrForge edits encrypted desktop Terraria `.plr` character files only. It does n
 | v279 | 1.4.4.x | Verified | Opens, edits, validates, backs up, writes, decrypts, and verifies the saved payload. |
 | v317 | 1.4.5.x | Verified | Opens, edits, validates, backs up, writes, decrypts, and verifies the saved payload. |
 | v325 | 1.4.5.x | Verified | Opens, edits, validates, backs up, writes, decrypts, and verifies the saved payload. |
+| v326 | 1.4.5.8 | Verified | Opens, edits, validates, backs up, writes, decrypts, and verifies the saved payload. |
 | v1–v278, v280–v316, v318–v324 | Historical desktop formats | Needs fixture | Shows the detected version but keeps editing disabled until that exact layout passes the golden-fixture suite. |
-| v326 and newer | Newer than the latest verified format | Update needed | Keeps editing disabled and asks the user to update PlrForge. |
+| v327 and newer | Newer than the latest verified format | Update needed | Keeps editing disabled and asks the user to update PlrForge. |
 | v0, negative, truncated, or undecryptable data | Not a recognized desktop player payload | Unsupported | Rejects the file without entering the editor. |
 
 “Verified” is intentionally exact-version, not a best-effort range. Each enabled codec has mutation coverage, byte-identical no-edit round trips, a disposable real-file regression path, and the same guarded save transaction. PlrForge fails closed when a Terraria update changes the player-file version.

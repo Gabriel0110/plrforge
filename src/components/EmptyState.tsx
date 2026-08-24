@@ -1,13 +1,15 @@
-import { CheckCircle, FileArrowUp, FolderOpen, ShieldCheck, WarningCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, CheckCircle, FileArrowUp, FolderOpen, ShieldCheck, WarningCircle } from "@phosphor-icons/react";
 import type { DiscoveredPlayer } from "../types";
 
 type Props = {
   players: DiscoveredPlayer[];
+  refreshing: boolean;
+  onRefresh: () => void;
   onOpen: () => void;
   onLoad: (path: string) => void;
 };
 
-export function EmptyState({ players, onOpen, onLoad }: Props) {
+export function EmptyState({ players, refreshing, onRefresh, onOpen, onLoad }: Props) {
   return (
     <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_340px] overflow-hidden">
       <section className="grid place-items-center p-10">
@@ -21,8 +23,13 @@ export function EmptyState({ players, onOpen, onLoad }: Props) {
         </div>
       </section>
       <aside className="border-l border-white/[0.08] bg-white/[0.018] p-6">
-        <p className="text-xs font-semibold text-white/72">Found on this computer</p>
-        <p className="mt-1 text-[11px] leading-5 text-white/32">PlrForge checks the standard Terraria Players folder.</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold text-white/72">Found on this computer</p>
+          <button type="button" onClick={onRefresh} disabled={refreshing} aria-label="Refresh player list" title="Refresh player list" className="toolbar-button size-8">
+            <ArrowClockwise className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+        <p className="mt-1 text-[11px] leading-5 text-white/32">PlrForge checks the standard Terraria Players folder and refreshes this list automatically.</p>
         <div className="mt-5 space-y-2">
           {players.length ? players.map((player) => (
             <button type="button" key={player.path} onClick={() => onLoad(player.path)} className="w-full rounded-xl border border-white/[0.08] bg-white/[0.025] px-3.5 py-3 text-left transition hover:border-white/18 hover:bg-white/[0.05] active:scale-[0.99]">

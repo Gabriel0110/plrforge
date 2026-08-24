@@ -25,7 +25,7 @@ pub enum SaveError {
     #[error("The encrypted player file is damaged or incomplete")]
     Crypto,
     #[error(
-        "Player file v{0} is not editable in this build. PlrForge's latest verified format is v325"
+        "Player file v{0} is not editable in this build. PlrForge's latest verified format is v326"
     )]
     UnsupportedVersion(i32),
     #[error("The player file is truncated or has an invalid supported layout")]
@@ -454,7 +454,7 @@ mod integration_tests {
     fn compatibility_probe_refuses_unverified_formats_before_parsing() {
         for (version, expected_state) in [
             (324, codec::CompatibilityState::Untested),
-            (326, codec::CompatibilityState::Unsupported),
+            (327, codec::CompatibilityState::Unsupported),
         ] as [(i32, codec::CompatibilityState); 2]
         {
             let temporary = tempfile::tempdir().unwrap();

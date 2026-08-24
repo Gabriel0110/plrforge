@@ -3,9 +3,9 @@ use serde::Serialize;
 use std::path::Path;
 
 const LOWEST_TERRARIA_VERSION: i32 = 1;
-const LATEST_VERIFIED_VERSION: i32 = 325;
+const LATEST_VERIFIED_VERSION: i32 = 326;
 #[cfg(test)]
-const VERIFIED_VERSIONS: [i32; 3] = [279, 317, 325];
+const VERIFIED_VERSIONS: [i32; 4] = [279, 317, 325, 326];
 
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -30,6 +30,7 @@ pub(super) enum Codec {
     V279,
     V317,
     V325,
+    V326,
 }
 
 pub fn inspect_plaintext(data: &[u8]) -> Result<PlayerCompatibility, SaveError> {
@@ -38,7 +39,7 @@ pub fn inspect_plaintext(data: &[u8]) -> Result<PlayerCompatibility, SaveError> 
 
 pub fn classify_version(version: i32) -> PlayerCompatibility {
     match version {
-        279 | 317 | LATEST_VERIFIED_VERSION => PlayerCompatibility {
+        279 | 317 | 325 | LATEST_VERIFIED_VERSION => PlayerCompatibility {
             state: CompatibilityState::Supported,
             file_version: version,
             format_label: if version == 279 {
@@ -86,7 +87,8 @@ pub(super) fn codec_for_plaintext(data: &[u8]) -> Result<Codec, SaveError> {
     match version {
         279 => Ok(Codec::V279),
         317 => Ok(Codec::V317),
-        LATEST_VERIFIED_VERSION => Ok(Codec::V325),
+        325 => Ok(Codec::V325),
+        LATEST_VERIFIED_VERSION => Ok(Codec::V326),
         _ => Err(SaveError::UnsupportedVersion(version)),
     }
 }
@@ -110,6 +112,7 @@ impl Codec {
             Self::V279 => v325::parse_v279(path, source_hash, data),
             Self::V317 => v325::parse_v317(path, source_hash, data),
             Self::V325 => v325::parse(path, source_hash, data),
+            Self::V326 => v325::parse_v326(path, source_hash, data),
         }
     }
 
@@ -134,6 +137,15 @@ impl Codec {
                 &request.storage,
             ),
             Self::V325 => v325::validate_document(
+                &request.character,
+                &request.effects,
+                &request.journey,
+                &request.spawn_points,
+                &request.inventory,
+                &request.equipment,
+                &request.storage,
+            ),
+            Self::V326 => v325::validate_document_v326(
                 &request.character,
                 &request.effects,
                 &request.journey,
@@ -187,6 +199,18 @@ impl Codec {
                     storage: &request.storage,
                 },
             ),
+            Self::V326 => v325::patch_document_v326(
+                data,
+                v325::PatchDocument {
+                    character: &request.character,
+                    effects: &request.effects,
+                    journey: &request.journey,
+                    spawn_points: &request.spawn_points,
+                    inventory: &request.inventory,
+                    equipment: &request.equipment,
+                    storage: &request.storage,
+                },
+            ),
         }
     }
 }
@@ -217,7 +241,7 @@ mod tests {
         assert!(!historical.can_edit);
         assert!(historical.message.contains("golden-fixture"));
 
-        let newer = classify_version(326);
+        let newer = classify_version(327);
         assert_eq!(newer.state, CompatibilityState::Unsupported);
         assert!(!newer.can_edit);
         assert!(newer.message.contains("Update PlrForge"));
@@ -237,13 +261,17 @@ mod tests {
             codec_for_plaintext(&325i32.to_le_bytes()).unwrap(),
             Codec::V325
         );
+        assert_eq!(
+            codec_for_plaintext(&326i32.to_le_bytes()).unwrap(),
+            Codec::V326
+        );
         assert!(matches!(
             codec_for_plaintext(&316i32.to_le_bytes()),
             Err(SaveError::UnsupportedVersion(316))
         ));
         assert!(matches!(
-            codec_for_plaintext(&326i32.to_le_bytes()),
-            Err(SaveError::UnsupportedVersion(326))
+            codec_for_plaintext(&327i32.to_le_bytes()),
+            Err(SaveError::UnsupportedVersion(327))
         ));
     }
 

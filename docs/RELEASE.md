@@ -8,10 +8,10 @@
 - `cargo fmt --manifest-path src-tauri/Cargo.toml -- --check`
 - `cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
 - `cargo test --manifest-path src-tauri/Cargo.toml`
-- Run `PLRFORGE_FIXTURE=/absolute/path/to/a/disposable.plr cargo test --manifest-path src-tauri/Cargo.toml external_fixture -- --nocapture` once each with v279, v317, and v325 fixtures.
+- Run `PLRFORGE_FIXTURE=/absolute/path/to/a/disposable.plr cargo test --manifest-path src-tauri/Cargo.toml external_fixture -- --nocapture` once each with v279, v317, v325, and v326 fixtures.
 - Confirm the external fixture's no-edit save and generated backup are byte-identical to the encrypted source.
-- Confirm verified v279/v317/v325 files appear as **Verified**, other historical fixture-gated files appear as **Needs fixture**, newer files appear as **Update needed**, and only verified files can enter the editor.
-- Load, modify, save, and re-open a disposable v325 character copy.
+- Confirm verified v279/v317/v325/v326 files appear as **Verified**, other historical fixture-gated files appear as **Needs fixture**, newer files appear as **Update needed**, and only verified files can enter the editor.
+- Load, modify, save, and re-open a disposable v326 character copy.
 - Exercise inventory-to-storage copy/move and active/inactive loadout edits on a disposable copy.
 - Exercise a variable-length name, stats, appearance color, voice, permanent-upgrade, and death-counter edit on a disposable copy.
 - Exercise saved-buff add/remove and duration changes on a disposable copy.

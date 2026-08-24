@@ -21,7 +21,7 @@ const player = (patch: Partial<DiscoveredPlayer> = {}): DiscoveredPlayer => ({
 describe("EmptyState", () => {
   it("labels verified local players and loads the selected path", () => {
     const load = vi.fn();
-    render(<EmptyState players={[player()]} onOpen={vi.fn()} onLoad={load} />);
+    render(<EmptyState players={[player()]} refreshing={false} onRefresh={vi.fn()} onOpen={vi.fn()} onLoad={load} />);
 
     expect(screen.getByText("Verified")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Hero.*Verified.*File version 325/ }));
@@ -41,7 +41,7 @@ describe("EmptyState", () => {
         message: "Player v278 has not passed PlrForge's golden-fixture suite.",
       },
     });
-    render(<EmptyState players={[historical]} onOpen={vi.fn()} onLoad={vi.fn()} />);
+    render(<EmptyState players={[historical]} refreshing={false} onRefresh={vi.fn()} onOpen={vi.fn()} onLoad={vi.fn()} />);
 
     expect(screen.getByText("Needs fixture")).toBeTruthy();
     expect(screen.getByText(/has not passed PlrForge's golden-fixture suite/)).toBeTruthy();
@@ -49,18 +49,26 @@ describe("EmptyState", () => {
 
   it("marks a newer format as requiring an app update", () => {
     const newer = player({
-      version: 326,
+      version: 327,
       compatibility: {
         state: "unsupported",
-        fileVersion: 326,
-        formatLabel: "Newer Terraria player v326",
+        fileVersion: 327,
+        formatLabel: "Newer Terraria player v327",
         canEdit: false,
-        message: "Player v326 is newer than PlrForge's latest verified format.",
+        message: "Player v327 is newer than PlrForge's latest verified format.",
       },
     });
-    render(<EmptyState players={[newer]} onOpen={vi.fn()} onLoad={vi.fn()} />);
+    render(<EmptyState players={[newer]} refreshing={false} onRefresh={vi.fn()} onOpen={vi.fn()} onLoad={vi.fn()} />);
 
     expect(screen.getByText("Update needed")).toBeTruthy();
     expect(screen.getByText(/newer than PlrForge's latest verified format/)).toBeTruthy();
+  });
+
+  it("offers an immediate player-list refresh", () => {
+    const refresh = vi.fn();
+    render(<EmptyState players={[]} refreshing={false} onRefresh={refresh} onOpen={vi.fn()} onLoad={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh player list" }));
+    expect(refresh).toHaveBeenCalledOnce();
   });
 });

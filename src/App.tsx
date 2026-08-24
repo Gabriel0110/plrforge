@@ -18,7 +18,7 @@ import {
   Stack,
   Warning,
 } from "@phosphor-icons/react";
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { EmptyState } from "./components/EmptyState";
 import { BackupsPanel } from "./components/BackupsPanel";
 import { CharacterPanel } from "./components/CharacterPanel";
@@ -197,6 +197,8 @@ export default function App() {
   const desktop = isDesktop();
   const [loadState, setLoadState] = useState<LoadState>(desktop ? "discovering" : "ready");
   const [players, setPlayers] = useState<DiscoveredPlayer[]>([]);
+  const [refreshingPlayers, setRefreshingPlayers] = useState(false);
+  const playerDiscoveryInFlight = useRef(false);
   const [player, setPlayer] = useState<PlayerDocument | null>(desktop ? null : demoPlayer);
   const [workspace, updateWorkspace] = useReducer(workspaceReducer, initialWorkspace);
   const { view, selected, loadoutIndex, storageKey, query, clipboard } = workspace;
@@ -209,7 +211,7 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(desktop ? null : "Browser preview uses a disposable demo character.");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [version, setVersion] = useState("0.1.0");
+  const [version, setVersion] = useState("0.1.1");
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [showUpdateNotice, setShowUpdateNotice] = useState(false);
@@ -248,10 +250,37 @@ export default function App() {
     }
   }, []);
 
+  const refreshPlayers = useCallback(async (initial = false) => {
+    if (!desktop || playerDiscoveryInFlight.current) return;
+    playerDiscoveryInFlight.current = true;
+    setRefreshingPlayers(true);
+    if (initial) setLoadState("discovering");
+    try {
+      setPlayers(await discoverPlayers());
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      playerDiscoveryInFlight.current = false;
+      setRefreshingPlayers(false);
+      if (initial) setLoadState("empty");
+    }
+  }, [desktop]);
+
   useEffect(() => {
     if (!desktop) return;
-    discoverPlayers().then((found) => { setPlayers(found); setLoadState("empty"); }).catch((reason) => { setError(reason instanceof Error ? reason.message : String(reason)); setLoadState("empty"); });
-  }, [desktop]);
+    void refreshPlayers(true);
+  }, [desktop, refreshPlayers]);
+
+  useEffect(() => {
+    if (!desktop || loadState !== "empty" || currentPlayer) return;
+    const refresh = () => void refreshPlayers();
+    const interval = window.setInterval(refresh, 5000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [currentPlayer, desktop, loadState, refreshPlayers]);
 
   useEffect(() => {
     void appVersion().then(setVersion).catch(() => undefined);
@@ -466,7 +495,7 @@ export default function App() {
         />
       )}
 
-      {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "error" ? <main className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} onOpen={openPlayer} onLoad={loadPath} /> : (
+      {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "error" ? <main className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} refreshing={refreshingPlayers} onRefresh={() => void refreshPlayers()} onOpen={openPlayer} onLoad={loadPath} /> : (
         <div className="grid min-h-0 flex-1 grid-cols-[208px_minmax(0,1fr)]">
           <SideRail view={view} onView={navigate} />
           <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">

@@ -45,7 +45,7 @@ export function JourneyPanel({ journey, difficulty, onChange }: Props) {
   return (
     <main className="min-h-0 overflow-y-auto px-7 py-6">
       <div className="mx-auto max-w-[1040px]">
-        <div><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-emerald-300/65">Journey character data</p><h1 className="mt-2 text-2xl font-semibold tracking-[-0.045em] text-white/92">Research and personal powers</h1><p className="mt-2 max-w-[70ch] text-sm leading-6 text-white/38">Research is stored by Terraria's persistent item key. A count of 9999 safely exceeds every v325 sacrifice requirement and is clamped by the game to its effective unlock threshold.</p></div>
+        <div><p className="font-mono text-[10px] uppercase tracking-[0.16em] text-emerald-300/65">Journey character data</p><h1 className="mt-2 text-2xl font-semibold tracking-[-0.045em] text-white/92">Research and personal powers</h1><p className="mt-2 max-w-[70ch] text-sm leading-6 text-white/38">Research is stored by Terraria's persistent item key. A count of 9999 safely exceeds every supported sacrifice requirement and is clamped by the game to its effective unlock threshold.</p></div>
         {difficulty !== 3 && <div className="mt-5 rounded-xl border border-amber-300/14 bg-amber-300/[0.035] px-4 py-3 text-[11px] leading-5 text-amber-100/58">This character is not currently Journey mode. Terraria preserves research records, but it resets personal Journey powers when a non-Journey character loads.</div>}
 
         <section className="mt-5 rounded-xl border border-white/[0.08] bg-white/[0.018] p-5">

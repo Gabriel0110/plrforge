@@ -66,7 +66,7 @@ PlrForge currently enables editing only for player-file layouts with dedicated r
 | macOS, Apple silicon and Intel | Universal application bundle and DMG |
 | Windows 10/11, x64 | MSI and NSIS installers |
 | Terraria player format v279 | Verified |
-| Terraria player formats v317 and v325 | Verified |
+| Terraria player formats v317, v325, and v326 | Verified |
 | Other `.plr` versions | Detected, but editing remains disabled until verified |
 
 See the [full compatibility matrix](docs/COMPATIBILITY.md) for format-specific details and exclusions.

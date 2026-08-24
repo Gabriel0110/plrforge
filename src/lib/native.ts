@@ -200,7 +200,7 @@ export function checkForUpdates(): Promise<UpdateStatus> {
   if (!isDesktop()) {
     return Promise.resolve({
       state: "preview",
-      currentVersion: "0.1.0",
+      currentVersion: "0.1.1",
       latestVersion: null,
       releaseName: null,
       releaseUrl: null,
@@ -220,5 +220,5 @@ export function openReleasePage(url: string): Promise<void> {
 }
 
 export function appVersion(): Promise<string> {
-  return isDesktop() ? getVersion() : Promise.resolve("0.1.0");
+  return isDesktop() ? getVersion() : Promise.resolve("0.1.1");
 }
