@@ -79,7 +79,8 @@ The codec, editing work, and optional local icon adapter are complete. The built
 - Player discovery and file opening expose the same supported/untested/unsupported decision, and unsupported files remain fail-closed with an actionable explanation.
 - The opt-in external v279/v317/v325 fixture suite proves that a no-edit save reproduces the exact encrypted source bytes and preserves the exact backup bytes.
 - Golden fixtures for supported historical formats, beginning with 1.4.4 and 1.4.5.
-- Unsigned preview builds, then Apple notarization and Windows code signing.
+- The manual preview pipeline now gates on tests, formatting, linting, and matching SemVer manifests; builds universal macOS DMG/app plus Windows MSI/NSIS artifacts; uses a macOS ad-hoc signature; validates all four bundle types; and attaches deterministic SHA-256 checksums, compatibility, and recovery documents to a draft prerelease.
+- Apple Developer ID signing/notarization and Windows code signing follow after preview testing.
 - Manual and opt-in GitHub Release discovery is implemented; signed download/install remains gated on a protected updater key and platform signing identities.
 - Signed update manifest, crash-safe diagnostics, localization, accessibility pass, and stable 1.0.
 

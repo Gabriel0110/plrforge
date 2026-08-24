@@ -4,6 +4,9 @@
 
 - `npm run build`
 - `npm run test`
+- `node script/release.mjs verify --expected <version>`
+- `cargo fmt --manifest-path src-tauri/Cargo.toml -- --check`
+- `cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings`
 - `cargo test --manifest-path src-tauri/Cargo.toml`
 - Run `PLRFORGE_FIXTURE=/absolute/path/to/a/disposable.plr cargo test --manifest-path src-tauri/Cargo.toml external_fixture -- --nocapture` once each with v279, v317, and v325 fixtures.
 - Confirm the external fixture's no-edit save and generated backup are byte-identical to the encrypted source.
@@ -23,7 +26,8 @@
 
 ## macOS
 
-- Build universal Apple Silicon + Intel artifacts.
+- Build universal Apple Silicon + Intel app and DMG artifacts.
+- For unsigned previews, keep Tauri's ad-hoc `signingIdentity: "-"`; confirm macOS still requires explicit user approval in Privacy & Security.
 - Configure Developer ID Application signing.
 - Notarize and staple the `.app`/`.dmg`.
 - Test first launch, file picker permissions, backup access, and Steam Cloud warning.
@@ -32,17 +36,28 @@
 ## Windows
 
 - Build x64 MSI and NSIS installer in GitHub Actions.
+- For unsigned previews, confirm both installer types clearly show the expected unidentified-publisher warning.
 - Sign executables and installers with an EV/OV certificate or trusted signing service.
 - Test WebView2 bootstrap, Documents discovery, non-ASCII usernames, and locked save files.
 - Test default/secondary Steam libraries, GOG paths, folder selection, and asset-protocol PNG display.
 
-## Public release
+## Preview release
+
+- Keep `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` on the same SemVer.
+- Run **Release preview** manually and enter that exact version without a leading `v`.
+- The workflow runs the complete quality gate before creating `v<version>` from the selected commit.
+- Confirm the draft contains a universal macOS `.app.tar.gz` and `.dmg`, a Windows `.msi` and NSIS `.exe`, `SHA256SUMS.txt`, `COMPATIBILITY.md`, and `RECOVERY.md`.
+- Download each bundle, verify it against `SHA256SUMS.txt`, and complete the macOS and Windows smoke tests above.
+- Keep the release as a draft until review is complete. If published for testers, keep it marked as a prerelease; the app's stable update check intentionally ignores it.
+- Do not enable Tauri updater metadata or `.sig` generation for unsigned previews.
+
+## Stable public release
 
 - Keep `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` on the same SemVer and tag it as `v<version>`.
 - Build distributed binaries with `PLRFORGE_GITHUB_REPOSITORY=owner/repository`; the GitHub Actions build does this from `${{ github.repository }}`.
 - Publish a non-draft, non-prerelease GitHub Release so the stable update check can discover it.
-- Run the **Release draft** workflow to create the `v<version>` draft and attach universal macOS plus Windows artifacts; review its notes and assets before publishing it.
-- Publish SHA-256 checksums and a compatibility matrix.
+- Promote only identity-signed/notarized artifacts that have passed the preview checklist; do not relabel unsigned preview binaries as stable.
+- Publish SHA-256 checksums, the compatibility matrix, and recovery instructions.
 - Link recovery instructions prominently.
 - Credit TEdit item metadata under MS-PL.
 - State that Terraria and its assets are owned by Re-Logic and are not distributed.

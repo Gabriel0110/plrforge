@@ -62,7 +62,7 @@ To configure a local or third-party build:
 PLRFORGE_GITHUB_REPOSITORY=owner/repository npm run desktop:build
 ```
 
-Published release tags must be semantic versions such as `v0.2.0`, and the versions in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` must agree. A signed in-app installer is intentionally deferred until the project has permanent macOS/Windows signing identities and a protected Tauri updater key.
+Published release tags must be semantic versions such as `v0.2.0`, and the versions in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` must agree. The manual **Release preview** workflow enforces that invariant, creates universal macOS and Windows bundles in a draft prerelease, and attaches a verified SHA-256 manifest. Preview macOS builds use an ad-hoc signature; neither platform is identity-signed yet. A signed in-app installer is intentionally deferred until the project has permanent macOS/Windows signing identities and a protected Tauri updater key.
 
 ## Data and licensing
 
@@ -70,6 +70,6 @@ The searchable item and buff metadata is distributed under the Microsoft Public 
 
 ## Status
 
-See [Product plan](docs/PRODUCT_PLAN.md), [architecture](docs/ARCHITECTURE.md), and [release checklist](docs/RELEASE.md).
+See the [compatibility matrix](docs/COMPATIBILITY.md), [recovery guide](docs/RECOVERY.md), [product plan](docs/PRODUCT_PLAN.md), [architecture](docs/ARCHITECTURE.md), and [release checklist](docs/RELEASE.md).
 
 The project also includes a one-command macOS run loop at `script/build_and_run.sh` and a Codex `Run` action in `.codex/environments/environment.toml`.

@@ -36,6 +36,9 @@
     "targets": "all",
     "category": "Utility",
     "shortDescription": "Local Terraria character editor",
-    "longDescription": "Edit supported Terraria desktop player files locally with automatic backups and verification."
+    "longDescription": "Edit supported Terraria desktop player files locally with automatic backups and verification.",
+    "macOS": {
+      "signingIdentity": "-"
+    }
   }
 }

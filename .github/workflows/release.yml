@@ -1,22 +1,27 @@
-name: Release draft
+name: Release preview
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: Exact SemVer currently stored in all three application manifests
+        required: true
+        type: string
 
 permissions:
   contents: write
 
+concurrency:
+  group: release-preview
+  cancel-in-progress: false
+
 jobs:
-  publish:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos-latest
-            args: --target universal-apple-darwin
-          - platform: windows-latest
-            args: ""
-    runs-on: ${{ matrix.platform }}
+  quality:
+    name: Validate v${{ inputs.version }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,16 +30,91 @@ jobs:
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          components: clippy, rustfmt
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: npm ci
-      - uses: tauri-apps/tauri-action@v1
+      - id: version
+        name: Verify release version
+        run: node script/release.mjs verify --expected "${{ inputs.version }}"
+      - run: npm run build
+      - run: npm run test
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+
+  publish:
+    name: Package ${{ matrix.label }}
+    needs: quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: macOS universal
+            platform: macos-latest
+            args: --target universal-apple-darwin --bundles app,dmg
+            rustTargets: aarch64-apple-darwin,x86_64-apple-darwin
+            signingIdentity: "-"
+          - label: Windows x64
+            platform: windows-latest
+            args: --bundles nsis,msi
+            rustTargets: ""
+            signingIdentity: ""
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rustTargets }}
+      - run: npm ci
+      - name: Build and upload preview bundles
+        uses: tauri-apps/tauri-action@v1
         env:
+          APPLE_SIGNING_IDENTITY: ${{ matrix.signingIdentity }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLRFORGE_GITHUB_REPOSITORY: ${{ github.repository }}
         with:
           tagName: v__VERSION__
-          releaseName: PlrForge v__VERSION__
-          releaseBody: Download the artifact for your platform. See the repository release notes and compatibility matrix before editing a character.
+          releaseName: PlrForge v__VERSION__ Preview
+          releaseBody: |
+            ## Unsigned preview
+
+            This is a manual-testing build, not a stable release. Back up every character before editing it and keep Terraria closed while PlrForge is open.
+
+            The macOS bundle has an ad-hoc signature but is not Apple-notarized. Windows installers are not code-signed. Review `COMPATIBILITY.md`, `RECOVERY.md`, and `SHA256SUMS.txt` before testing.
+          releaseCommitish: ${{ github.sha }}
           releaseDraft: true
-          prerelease: false
+          prerelease: true
+          generateReleaseNotes: true
           args: ${{ matrix.args }}
+          retryAttempts: 2
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
+
+  finalize:
+    name: Verify release assets
+    needs: [quality, publish]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_TAG: v${{ needs.quality.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download uploaded bundles
+        run: gh release download "$RELEASE_TAG" --dir release-assets
+      - name: Validate bundles and generate SHA-256 manifest
+        run: node script/release.mjs checksums release-assets --require .app.tar.gz,.dmg,.msi,.exe
+      - name: Attach checksums and compatibility matrix
+        run: gh release upload "$RELEASE_TAG" release-assets/SHA256SUMS.txt docs/COMPATIBILITY.md docs/RECOVERY.md --clobber
+      - name: Confirm draft release state
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true"
+          gh release view "$RELEASE_TAG" --json url --jq '"Draft preview ready: " + .url'

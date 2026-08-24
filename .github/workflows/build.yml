@@ -6,9 +6,18 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  quality:
+    name: Quality gate
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,22 +25,39 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: npm ci
       - run: npm run build
       - run: npm run test
-      - run: cargo test --manifest-path src-tauri/Cargo.toml
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - run: node script/release.mjs verify
 
   desktop:
-    needs: test
+    name: Desktop bundle (${{ matrix.label }})
+    needs: quality
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
-            args: --target universal-apple-darwin
-          - platform: windows-latest
-            args: ""
+          - label: macOS universal
+            platform: macos-latest
+            args: --target universal-apple-darwin --bundles app,dmg
+            rustTargets: aarch64-apple-darwin,x86_64-apple-darwin
+            signingIdentity: "-"
+          - label: Windows x64
+            platform: windows-latest
+            args: --bundles nsis,msi
+            rustTargets: ""
+            signingIdentity: ""
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,11 +66,17 @@ jobs:
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.rustTargets }}
       - run: npm ci
-      - uses: tauri-apps/tauri-action@v1
+      - name: Build desktop bundles
+        uses: tauri-apps/tauri-action@v1
         env:
+          APPLE_SIGNING_IDENTITY: ${{ matrix.signingIdentity }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLRFORGE_GITHUB_REPOSITORY: ${{ github.repository }}
         with:
           args: ${{ matrix.args }}
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
+          uploadWorkflowArtifacts: true
+          workflowArtifactNamePattern: PlrForge-[version]-[platform]-[arch]-[bundle]

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run && node --test script/release.test.mjs",
     "test:watch": "vitest",
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
