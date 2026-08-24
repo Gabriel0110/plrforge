@@ -15,6 +15,7 @@ The application optimizes for three jobs:
 - **Character:** identity, difficulty, health, mana, appearance, permanent upgrades, death counts, and play time.
 - **Loadouts:** armor, accessories, vanity, dyes, pets, light pets, hooks, mounts, and minecarts across all three loadouts.
 - **Inventory:** 50 main slots, coins, ammo, item ID, stack, prefix, favorite, move, replace, and clear.
+- **Item Catalog:** browse every known item by category and rarity, search by name/key/ID, sort, restrict to the active destination's compatible items, and insert without leaving the browsing workflow.
 - **Storage:** Piggy Bank, Safe, Defender's Forge, and Void Vault.
 - **Effects:** saved buffs and durations.
 - **Journey:** researched items and quantities, plus journey-only player powers when serialized in the player file.
@@ -23,7 +24,7 @@ The application optimizes for three jobs:
 - **Settings:** local game-art source and manual/opt-in GitHub Release checks.
 - **Change ledger:** undo, redo, before/after inspection, and save transaction result.
 
-Global command search finds both actions and items. An item can be added to the first compatible empty slot or assigned to an explicit slot. Equipment slots reject incompatible item categories once the local catalog adapter can resolve item capabilities.
+The quick search beside every item surface supports direct name/ID entry or hands the current destination to the full Item Catalog. Equipment slots keep incompatible catalog entries visible for discovery but disable insertion; the compatibility-only filter removes them when a focused choice is needed.
 
 ## Safety and trust
 
@@ -60,6 +61,7 @@ Global command search finds both actions and items. An item can be added to the 
 - Cross-surface copy, move, safe swap, and keyboard-accessible controls.
 - Automatic Steam/GOG discovery and locally extracted, user-owned item and buff icons with a no-assets fallback.
 - Strict XNB/LZX decoding, fingerprinted OS cache, exact v325 animation-frame normalization, and a manual folder picker.
+- Transparent-edge normalization, bounded pixel-art viewports, a compact inventory layout with a distinct hotbar, and a reusable full Item Catalog with category/rarity/sort/compatibility controls.
 
 The codec, editing work, and optional local icon adapter are complete. The built-in no-assets glyph fallback remains production-safe.
 

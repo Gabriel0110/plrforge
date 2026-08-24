@@ -1,6 +1,6 @@
 import rawItems from "./items.json";
 import rawPrefixes from "./prefixes.json";
-import type { CatalogItem, ItemLocation, Prefix } from "../types";
+import type { CatalogItem, ItemCategory, ItemLocation, Prefix } from "../types";
 
 export const items = rawItems as CatalogItem[];
 export const prefixes = (rawPrefixes as Prefix[]).map((prefix, index) => ({
@@ -10,6 +10,52 @@ export const prefixes = (rawPrefixes as Prefix[]).map((prefix, index) => ({
 }));
 
 const byId = new Map(items.map((item) => [item.id, item]));
+
+export const itemCategories: { id: ItemCategory; label: string; description: string }[] = [
+  { id: "all", label: "All items", description: "The complete local catalog" },
+  { id: "rackable", label: "Weapons & tools", description: "Gear Terraria allows on weapon racks" },
+  { id: "armor", label: "Armor", description: "Head, body, and leg equipment" },
+  { id: "accessories", label: "Accessories", description: "Equippable accessories" },
+  { id: "placeables", label: "Placeables", description: "Tiles, furniture, walls, and blocks" },
+  { id: "mounts", label: "Mounts", description: "Mount-summoning items" },
+  { id: "critters", label: "Critters", description: "Catchable creatures" },
+  { id: "food", label: "Food", description: "Food and drink items" },
+  { id: "dyes", label: "Dyes", description: "Dye-slot items" },
+  { id: "other", label: "Other", description: "Everything outside these groups" },
+];
+
+const categorized = (item: CatalogItem) =>
+  item.isRackable === true
+  || item.head !== undefined
+  || item.body !== undefined
+  || item.legs !== undefined
+  || item.isAccessory === true
+  || item.createTile !== undefined
+  || item.createWall !== undefined
+  || item.isMount === true
+  || item.isCritter === true
+  || item.isFood === true
+  || /dye/i.test(item.name)
+  || /dye$/i.test(item.key ?? "");
+
+export function itemMatchesCategory(item: CatalogItem, category: ItemCategory): boolean {
+  if (category === "all") return true;
+  if (category === "rackable") return item.isRackable === true;
+  if (category === "armor") return item.head !== undefined || item.body !== undefined || item.legs !== undefined;
+  if (category === "accessories") return item.isAccessory === true;
+  if (category === "placeables") return item.createTile !== undefined || item.createWall !== undefined;
+  if (category === "mounts") return item.isMount === true;
+  if (category === "critters") return item.isCritter === true;
+  if (category === "food") return item.isFood === true;
+  if (category === "dyes") return /dye/i.test(item.name) || /dye$/i.test(item.key ?? "");
+  return !categorized(item);
+}
+
+export function catalogCategoryCounts(): Record<ItemCategory, number> {
+  return Object.fromEntries(
+    itemCategories.map(({ id }) => [id, items.filter((item) => itemMatchesCategory(item, id)).length]),
+  ) as Record<ItemCategory, number>;
+}
 
 export function findItem(itemId: number): CatalogItem | undefined {
   return byId.get(itemId);

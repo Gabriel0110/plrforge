@@ -153,14 +153,32 @@ export type CatalogItem = {
   id: number;
   name: string;
   key?: string;
+  scale?: number;
   maxStackSize?: number;
   rarity?: string;
+  isRackable?: boolean;
   isAccessory?: boolean;
   isMount?: boolean;
+  isCritter?: boolean;
+  isFood?: boolean;
+  createTile?: number;
+  createWall?: number;
   head?: number;
   body?: number;
   legs?: number;
 };
+
+export type ItemCategory =
+  | "all"
+  | "rackable"
+  | "armor"
+  | "accessories"
+  | "placeables"
+  | "mounts"
+  | "critters"
+  | "food"
+  | "dyes"
+  | "other";
 
 export type Prefix = {
   id?: number;

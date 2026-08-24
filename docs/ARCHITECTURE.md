@@ -48,13 +48,15 @@ PlrForge never ships or fetches Terraria artwork. A native Tauri command discove
 
 The format implementation is grounded in the open-source [TExtract XNB extractor](https://github.com/Antag99/TExtract/blob/master/TExtract/src/com/github/antag99/textract/extract/XnbExtractor.java), uses the audited [`lzxd` Rust decoder](https://docs.rs/lzxd/latest/lzxd/), and follows Tauri's [scoped asset-protocol model](https://v2.tauri.app/security/asset-protocol/).
 
-Animated item sheets are cropped by Terraria v325's exact registered frame rules, including the current `ItemID.Sets.IsFood` membership. Extracted PNGs live below the OS application-cache directory. Tauri's asset protocol is enabled only for `$APPCACHE/terraria-assets/**/*`; original game resources and unrelated filesystem locations are never exposed to the webview. A completed fingerprint is reused on later launches, while a changed installation produces a new cache. Missing or invalid assets degrade to deterministic text glyphs and never block save editing.
+Animated item sheets are cropped by Terraria v325's exact registered frame rules, including the current `ItemID.Sets.IsFood` membership. Item textures then lose only fully transparent outer rows and columns; visible and translucent pixels are neither resampled nor recolored. The shared React glyph viewport clips, centers, and pixel-renders the result at a bounded visual size across inventory, storage, inspector, search, Journey, and Item Catalog surfaces.
+
+Extracted PNGs live below the OS application-cache directory. Tauri's asset protocol is enabled only for `$APPCACHE/terraria-assets/**/*`; original game resources and unrelated filesystem locations are never exposed to the webview. A completed versioned fingerprint is reused on later launches, while a changed installation or normalization version produces a new cache. Missing or invalid assets degrade to deterministic text glyphs and never block save editing.
 
 ## Testing strategy
 
 - Rust unit tests cover 7-bit strings, variable-length Unicode names, dynamic v325 offsets, character validation, all character-field round trips, active/inactive loadout mapping, equipment stack validation, buff/spawn/research/Journey mutation, encryption and zero-padding round trips, untouched-tail assertions after multiple variable-length splices, strict XNB texture parsing, LZX decoding against locally installed real assets when available, animation-frame cropping, and Steam library-path parsing.
 - Golden fixtures should be synthetic or explicitly user-approved and must never contain personal player files in source control.
-- React tests cover the Character, Effects, Journey, Spawn Points, Backups, and Settings workspaces, item search, slot replacement, validation, restore confirmation, shared undo/redo, loading, empty, and error states.
+- React tests cover the Character, Effects, Journey, Spawn Points, Backups, Settings, and Item Catalog workspaces, item search, category derivation, slot compatibility, catalog insertion, slot replacement, validation, restore confirmation, shared undo/redo, loading, empty, and error states.
 - Native smoke tests load a copied fixture, change character, item, buff, spawn, research, Journey-power, and Super Cart regions, save it, re-open it, compare the complete normalized models, list the verified backup, restore it, and verify the pre-restore safety copy.
 
 ## Update response

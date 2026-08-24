@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptsItem, searchItems } from "./catalog";
+import { acceptsItem, catalogCategoryCounts, itemMatchesCategory, searchItems } from "./catalog";
 
 describe("item catalog search", () => {
   it("finds items by exact numeric ID", () => {
@@ -15,5 +15,12 @@ describe("item catalog search", () => {
     const pickaxe = searchItems("iron pickaxe")[0];
     expect(acceptsItem({ area: "loadoutArmor", loadout: 0, slot: 0 }, helmet)).toBe(true);
     expect(acceptsItem({ area: "loadoutArmor", loadout: 0, slot: 0 }, pickaxe)).toBe(false);
+  });
+
+  it("builds useful browser categories from Terraria catalog metadata", () => {
+    expect(itemMatchesCategory(searchItems("iron pickaxe")[0], "rackable")).toBe(true);
+    expect(itemMatchesCategory(searchItems("dirt block")[0], "placeables")).toBe(true);
+    expect(itemMatchesCategory(searchItems("chlorophyte mask")[0], "armor")).toBe(true);
+    expect(catalogCategoryCounts().all).toBeGreaterThan(6_000);
   });
 });

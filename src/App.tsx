@@ -14,6 +14,7 @@ import {
   MapPin,
   ShieldCheck,
   Sparkle,
+  SquaresFour,
   Stack,
   Warning,
 } from "@phosphor-icons/react";
@@ -23,6 +24,7 @@ import { BackupsPanel } from "./components/BackupsPanel";
 import { CharacterPanel } from "./components/CharacterPanel";
 import { EffectsPanel } from "./components/EffectsPanel";
 import { InventoryGrid } from "./components/InventoryGrid";
+import { ItemBrowser } from "./components/ItemBrowser";
 import { HeaderUpdateButton } from "./components/HeaderUpdateButton";
 import { ItemInspector } from "./components/ItemInspector";
 import { ItemSearch } from "./components/ItemSearch";
@@ -70,7 +72,7 @@ import type {
   StorageKey,
 } from "./types";
 
-type View = "overview" | "loadouts" | "inventory" | "storage" | "effects" | "journey" | "spawns" | "backups" | "settings";
+type View = "overview" | "loadouts" | "inventory" | "catalog" | "storage" | "effects" | "journey" | "spawns" | "backups" | "settings";
 type LoadState = "discovering" | "empty" | "loading" | "ready" | "error";
 type ClipboardState = { item: InventoryItem; source: ItemLocation; mode: "copy" | "move" };
 type WorkspaceState = {
@@ -99,6 +101,7 @@ const navigation: { id: View; label: string; icon: typeof IdentificationCard; ph
   { id: "overview", label: "Character", icon: IdentificationCard },
   { id: "loadouts", label: "Loadouts", icon: ShieldCheck },
   { id: "inventory", label: "Inventory", icon: Backpack },
+  { id: "catalog", label: "Item Catalog", icon: SquaresFour },
   { id: "storage", label: "Storage", icon: Database },
   { id: "effects", label: "Effects", icon: Flask },
   { id: "journey", label: "Journey", icon: Sparkle },
@@ -210,6 +213,7 @@ export default function App() {
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [showUpdateNotice, setShowUpdateNotice] = useState(false);
+  const [catalogReturnView, setCatalogReturnView] = useState<"inventory" | "loadouts" | "storage" | null>(null);
   const [automaticUpdateChecks, setAutomaticUpdateChecks] = useState(() => localStorage.getItem("plrforge.autoUpdateChecks") === "true");
   const [editor, dispatch] = useReducer(editorReducer, editableDocument(player ?? demoPlayer), initialEditorState);
 
@@ -300,7 +304,8 @@ export default function App() {
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        document.querySelector<HTMLInputElement>('input[aria-label="Find any item by name or ID"]')?.focus();
+        (document.querySelector<HTMLInputElement>('input[aria-label="Find any item by name or ID"]')
+          ?? document.querySelector<HTMLInputElement>('input[aria-label="Search item catalog"]'))?.focus();
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -329,10 +334,17 @@ export default function App() {
 
   const navigate = (next: View) => {
     setView(next);
+    setCatalogReturnView(null);
     setQuery("");
     if (next === "inventory") setSelected({ area: "inventory", slot: 0 });
     if (next === "loadouts") setSelected({ area: "loadoutArmor", loadout: loadoutIndex, slot: 0 });
     if (next === "storage") setSelected({ area: "storage", storage: storageKey, slot: 0 });
+  };
+
+  const browseForSelectedSlot = () => {
+    if (view === "inventory" || view === "loadouts" || view === "storage") setCatalogReturnView(view);
+    setView("catalog");
+    setQuery("");
   };
 
   const changeAutomaticUpdateChecks = (enabled: boolean) => {
@@ -461,7 +473,7 @@ export default function App() {
             {isItemView ? (
               <div className="grid min-h-0 grid-cols-[minmax(700px,1fr)_300px] overflow-hidden">
                 <main key={view} className="min-h-0 overflow-y-auto px-6 py-5">
-                  <ItemSearch query={query} onQueryChange={setQuery} onChoose={chooseItem} targetLabel={targetLabel} acceptItem={(item) => acceptsItem(selected, item)} />
+                  <ItemSearch query={query} onQueryChange={setQuery} onChoose={chooseItem} targetLabel={targetLabel} acceptItem={(item) => acceptsItem(selected, item)} onBrowse={browseForSelectedSlot} />
                   <div className="mt-5">
                     {view === "inventory" && <InventoryGrid inventory={editor.inventory} selectedSlot={selected.area === "inventory" ? selected.slot : null} onSelect={(slot) => setSelected({ area: "inventory", slot })} />}
                     {view === "loadouts" && <LoadoutsPanel equipment={editor.equipment} loadout={loadoutIndex} selected={selected} onLoadout={(index) => { setLoadoutIndex(index); setSelected({ area: "loadoutArmor", loadout: index, slot: 0 }); }} onSelect={setSelected} onVisibility={changeVisibility} onMiscVisibility={changeMiscVisibility} />}
@@ -470,7 +482,8 @@ export default function App() {
                 </main>
                 <ItemInspector item={selectedItem} slotLabel={targetLabel} canStack={canStack(selected)} canFavorite={canFavorite(selected, activeVersion)} onPatch={patchSelected} onRemove={removeSelected} onCopy={() => setClipboard({ item: selectedItem, source: selected, mode: "copy" })} onMove={() => setClipboard({ item: selectedItem, source: selected, mode: "move" })} onPaste={paste} pasteLabel={clipboard && !sameLocation(clipboard.source, selected) ? itemName(clipboard.item.itemId) : null} />
               </div>
-            ) : view === "overview" ? <CharacterPanel character={editor.character} version={activeVersion} onChange={applyCharacterChange} />
+            ) : view === "catalog" ? <ItemBrowser targetLabel={targetLabel} acceptItem={(item) => acceptsItem(selected, item)} onChoose={chooseItem} onBack={catalogReturnView ? () => { setView(catalogReturnView); setCatalogReturnView(null); } : undefined} />
+              : view === "overview" ? <CharacterPanel character={editor.character} version={activeVersion} onChange={applyCharacterChange} />
               : view === "effects" ? <EffectsPanel effects={editor.effects} onChange={(effects, description, location) => applySystemChange({ effects }, description, location)} />
               : view === "journey" ? <JourneyPanel journey={editor.journey} difficulty={editor.character.difficulty} onChange={(journey, description, location) => applySystemChange({ journey }, description, location)} />
               : view === "spawns" ? <SpawnPointsPanel points={editor.spawnPoints} onChange={(spawnPoints, description, location) => applySystemChange({ spawnPoints }, description, location)} />

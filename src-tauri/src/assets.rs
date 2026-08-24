@@ -11,7 +11,7 @@ use std::{
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
 
-const CACHE_VERSION: &str = "xnb-textures-v2";
+const CACHE_VERSION: &str = "xnb-textures-v3";
 const COMPLETE_MARKER: &str = ".complete";
 
 #[derive(Debug, Error)]
@@ -296,6 +296,7 @@ fn extract_texture(source: &Path, target: &Path) -> Result<(), AssetError> {
         if let Some(id) = asset_id(source) {
             texture = first_item_frame(texture, item_frame_count(id))?;
         }
+        texture = trim_transparent_edges(texture);
     }
     let temporary = target.with_extension("png.tmp");
     let file = fs::File::create(&temporary)?;
@@ -348,6 +349,48 @@ fn first_item_frame(texture: Texture, frame_count: u32) -> Result<Texture, Asset
         height: frame_height,
         rgba: texture.rgba[..byte_count].to_vec(),
     })
+}
+
+fn trim_transparent_edges(texture: Texture) -> Texture {
+    let mut left = texture.width;
+    let mut top = texture.height;
+    let mut right = 0;
+    let mut bottom = 0;
+    let mut visible = false;
+
+    for y in 0..texture.height {
+        for x in 0..texture.width {
+            let alpha = texture.rgba[((y * texture.width + x) * 4 + 3) as usize];
+            if alpha == 0 {
+                continue;
+            }
+            visible = true;
+            left = left.min(x);
+            top = top.min(y);
+            right = right.max(x);
+            bottom = bottom.max(y);
+        }
+    }
+
+    if !visible
+        || (left == 0 && top == 0 && right + 1 == texture.width && bottom + 1 == texture.height)
+    {
+        return texture;
+    }
+
+    let width = right - left + 1;
+    let height = bottom - top + 1;
+    let mut rgba = Vec::with_capacity((width * height * 4) as usize);
+    for y in top..=bottom {
+        let row_start = ((y * texture.width + left) * 4) as usize;
+        let row_end = row_start + (width * 4) as usize;
+        rgba.extend_from_slice(&texture.rgba[row_start..row_end]);
+    }
+    Texture {
+        width,
+        height,
+        rgba,
+    }
 }
 
 fn decode_texture_xnb(bytes: &[u8]) -> Result<Texture, AssetError> {
@@ -611,6 +654,25 @@ mod tests {
                 width: 1,
                 height: 1,
                 rgba: vec![1, 2, 3, 4]
+            }
+        );
+    }
+
+    #[test]
+    fn trims_transparent_texture_edges_without_rescaling_pixels() {
+        let mut rgba = vec![0; 4 * 3 * 4];
+        rgba[20..24].copy_from_slice(&[10, 20, 30, 255]);
+        rgba[24..28].copy_from_slice(&[40, 50, 60, 128]);
+        assert_eq!(
+            trim_transparent_edges(Texture {
+                width: 4,
+                height: 3,
+                rgba
+            }),
+            Texture {
+                width: 2,
+                height: 1,
+                rgba: vec![10, 20, 30, 255, 40, 50, 60, 128],
             }
         );
     }

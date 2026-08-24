@@ -33,7 +33,7 @@ export function StoragePanel({ storage, container, selected, onContainer, onSele
         </div>
       </div>
       <section className="mt-6 rounded-xl border border-white/[0.08] bg-white/[0.018] p-4">
-        <div className="grid grid-cols-10 gap-2">
+        <div className="grid max-w-[694px] grid-cols-10 gap-1.5">
           {storage[container].map((item) => (
             <ItemSlotButton
               key={item.slot}

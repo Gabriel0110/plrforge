@@ -1,4 +1,4 @@
-import { Command, MagnifyingGlass, Plus } from "@phosphor-icons/react";
+import { Command, MagnifyingGlass, Plus, SquaresFour } from "@phosphor-icons/react";
 import { useMemo, useRef } from "react";
 import { searchItems } from "../data/catalog";
 import type { CatalogItem } from "../types";
@@ -10,9 +10,10 @@ type Props = {
   onChoose: (item: CatalogItem) => void;
   targetLabel: string;
   acceptItem?: (item: CatalogItem) => boolean;
+  onBrowse?: () => void;
 };
 
-export function ItemSearch({ query, onQueryChange, onChoose, targetLabel, acceptItem }: Props) {
+export function ItemSearch({ query, onQueryChange, onChoose, targetLabel, acceptItem, onBrowse }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const results = useMemo(
     () => searchItems(query, acceptItem ? 80 : 8).filter((item) => !acceptItem || acceptItem(item)).slice(0, 8),
@@ -20,7 +21,8 @@ export function ItemSearch({ query, onQueryChange, onChoose, targetLabel, accept
   );
 
   return (
-    <div className="relative">
+    <div className="relative flex gap-2">
+      <div className="relative min-w-0 flex-1">
       <MagnifyingGlass className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-white/38" />
       <input
         ref={inputRef}
@@ -67,6 +69,16 @@ export function ItemSearch({ query, onQueryChange, onChoose, targetLabel, accept
             </div>
           )}
         </div>
+      )}
+      </div>
+      {onBrowse && (
+        <button
+          type="button"
+          onClick={onBrowse}
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-white/12 bg-white/[0.035] px-4 text-[12px] font-medium text-white/58 transition hover:border-emerald-300/25 hover:bg-emerald-300/[0.055] hover:text-emerald-100/85 active:scale-[0.98]"
+        >
+          <SquaresFour className="size-4" />Browse items
+        </button>
       )}
     </div>
   );
