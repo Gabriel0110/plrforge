@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use std::process::Command;
 use std::{
     fs,
     path::{Path, PathBuf},
-    process::Command,
     time::UNIX_EPOCH,
 };
 use tauri::{AppHandle, Manager};
@@ -23,6 +24,7 @@ pub enum MetadataError {
     RuntimeUnavailable,
     #[error("could not prepare local item metadata: {0}")]
     Io(#[from] std::io::Error),
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
     #[error("Terraria's metadata helper failed: {0}")]
     Helper(String),
     #[error("Terraria returned an unsupported item metadata cache: {0}")]
@@ -305,6 +307,7 @@ fn run_helper(
     Err(MetadataError::RuntimeUnavailable)
 }
 
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn helper_result(result: std::process::Output) -> Result<(), MetadataError> {
     if result.status.success() {
         return Ok(());
@@ -317,6 +320,7 @@ fn helper_result(result: std::process::Output) -> Result<(), MetadataError> {
     }))
 }
 
+#[cfg(target_os = "macos")]
 fn link_or_copy(source: &Path, target: &Path) -> Result<(), std::io::Error> {
     if target.is_file() {
         let source_metadata = fs::metadata(source)?;
