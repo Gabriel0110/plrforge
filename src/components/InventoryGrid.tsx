@@ -17,6 +17,7 @@ export function ItemSlotButton({
   label,
   showIndex = true,
   hotbar = false,
+  raisedIcon = false,
 }: {
   item: InventoryItem;
   selected: boolean;
@@ -24,6 +25,7 @@ export function ItemSlotButton({
   label?: string;
   showIndex?: boolean;
   hotbar?: boolean;
+  raisedIcon?: boolean;
 }) {
   const name = itemName(item.itemId);
   return (
@@ -48,7 +50,7 @@ export function ItemSlotButton({
       >
         {hotbar && <span className="absolute inset-x-2 top-0 h-px bg-emerald-300/40" />}
         {showIndex && <span className={`absolute left-1.5 top-1 font-mono text-[8px] ${hotbar ? "text-emerald-100/42" : "text-white/25"}`}>{item.slot + 1}</span>}
-        <span className="grid size-full place-items-center">
+        <span className={`grid size-full place-items-center ${raisedIcon ? "-translate-y-1" : ""}`}>
           <ItemGlyph itemId={item.itemId} slot />
         </span>
         {item.stack > 1 && (
@@ -85,7 +87,7 @@ function SlotSection({
       </div>
       <div className={`grid gap-1.5 ${compact ? "grid-cols-4 max-w-[254px]" : "grid-cols-10 max-w-[694px]"}`}>
         {items.map((item) => (
-          <ItemSlotButton key={item.slot} item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
+          <ItemSlotButton key={item.slot} raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
         ))}
       </div>
     </section>
@@ -108,7 +110,7 @@ export function InventoryGrid({ inventory, selectedSlot, onSelect }: Props) {
           </div>
           <div className="grid grid-cols-10 gap-1.5">
             {inventory.slice(0, 10).map((item) => (
-              <ItemSlotButton key={item.slot} hotbar item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
+              <ItemSlotButton key={item.slot} hotbar raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
             ))}
           </div>
         </div>
@@ -117,7 +119,7 @@ export function InventoryGrid({ inventory, selectedSlot, onSelect }: Props) {
           <div className="mb-1.5 flex items-center gap-1.5 px-1.5 pt-0.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-white/30"><Backpack className="size-3" />Backpack</div>
           <div className="grid grid-cols-10 gap-1.5">
             {inventory.slice(10, 50).map((item) => (
-              <ItemSlotButton key={item.slot} item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
+              <ItemSlotButton key={item.slot} raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
             ))}
           </div>
         </div>
