@@ -20,7 +20,7 @@ The current v279/v317/v325 codec family is intentionally bytes-preserving. A for
 
 Journey world powers are deliberately absent from the player domain: time, weather, and world-difficulty controls are world-file state. Player files serialize only Godmode (ID 5), extended placement range (ID 11), and the enemy spawn-rate slider (ID 14). The codec preserves which supported records were present and adds one only when that power is edited.
 
-The version registry rejects anything other than 325 today. Each future codec must implement the same conceptual operations:
+The version registry enables the verified v279, v317, and v325 codecs and rejects all other layouts. Each future codec must implement the same conceptual operations:
 
 - inspect header and compatibility;
 - parse into the normalized domain model;

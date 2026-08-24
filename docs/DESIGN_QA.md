@@ -4,7 +4,7 @@
 
 - Generated target: `docs/editor-concept.png`
 - Browser implementation capture: `docs/implementation-1440x900.png`
-- Capture method: Codex in-app browser at an explicit 1440×900 viewport
+- Capture method: Chromium-based browser at an explicit 1440×900 viewport
 - Native check: packaged `PlrForge.app` inspected through macOS accessibility and window capture
 
 Both images were inspected at original resolution with `view_image` after the interaction tests.

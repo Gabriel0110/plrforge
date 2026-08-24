@@ -1,78 +1,179 @@
-# PlrForge
+<div align="center">
 
-PlrForge is an open-source, local-first Terraria character editor for macOS and Windows. It is an independent project and is not affiliated with or endorsed by Re-Logic.
+# PlrForge (Player Forge)
 
-The current build loads encrypted desktop `.plr` files at versions 279, 317, and 325 and edits character identity, difficulty, play time, health/mana, appearance, permanent upgrades, tax savings, death counters, and every item-bearing surface. Voice and team controls appear only when the loaded format can store them. The item surfaces include the 58 inventory slots, three equipment loadouts, vanity and dyes, pets/mounts/hooks, and four personal storage containers. A full 6,170-record Item Catalog supports browsing by data-backed category, rarity, name, numeric ID, compatibility, and several sort orders, then inserts directly into the carried destination slot. PlrForge also edits all 44 saved buff records, named spawn points, Journey research, the three per-player Journey powers, and both Super Cart flags. Every surface shares one undo history and guarded backup-and-verify save transaction. A centralized compatibility registry keeps other historical, unverified, and newer player formats out of the editor until their own golden fixtures pass.
+### A modern, local-first Terraria character editor for macOS and Windows
 
-## Why Tauri
+[![Build](https://github.com/Gabriel0110/plrforge/actions/workflows/build.yml/badge.svg)](https://github.com/Gabriel0110/plrforge/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-5fcf9b.svg)](LICENSE)
+[![Tauri](https://img.shields.io/badge/desktop-Tauri-24C8DB.svg)](https://tauri.app/)
+[![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-8b96a5.svg)](#compatibility)
 
-- Rust owns decryption, parsing, validation, backups, and writes.
-- React and TypeScript provide a fast, searchable desktop editor.
-- The shipped app uses the operating system webview instead of bundling Chromium.
-- The same source produces macOS application bundles and Windows installers.
+Edit Terraria player files with fast item search, a complete item catalog, native game icons and metadata, automatic backups, and verified saves.
 
-## Development
+[Download a build](https://github.com/Gabriel0110/plrforge/releases) · [View compatibility](docs/COMPATIBILITY.md) · [Report a bug](https://github.com/Gabriel0110/plrforge/issues/new) · [Contribute](CONTRIBUTING.md)
 
-Prerequisites: Node.js 20+, Rust stable, .NET 8 when rebuilding the metadata helper, and the platform requirements from the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) guide.
+</div>
 
-```sh
-npm install --cache /private/tmp/plrforge-npm-cache
-npm run metadata:build
-npm run dev
-npm run test
-npm run desktop:dev
-```
+> [!IMPORTANT]
+> Close Terraria before opening or saving a character. Steam Cloud or the running game can overwrite local changes.
 
-The browser build opens a safe demo character. Native file access is available only inside Tauri.
+PlrForge is an open-source editor for encrypted desktop Terraria `.plr` files. Everything runs locally: characters and extracted game data are never uploaded to a server. PlrForge edits player characters only—it does not modify worlds, console/mobile saves, server-side characters, or tModLoader `.tplr` files.
 
-To run the optional real-format regression suite against a disposable v279, v317, or v325 player copy, set `PLRFORGE_FIXTURE` to its absolute path. The tests copy it into a temporary directory before writing and prove that a no-edit save and its backup remain byte-identical to the encrypted source:
+PlrForge is an independent community project and is not affiliated with or endorsed by Re-Logic.
 
-```sh
-PLRFORGE_FIXTURE=/absolute/path/to/disposable.plr cargo test --manifest-path src-tauri/Cargo.toml external_fixture -- --nocapture
-```
+## Features
 
-Never point release automation at a live Steam Cloud character or commit `.plr` fixtures. Sanitized format evidence remains local until a redistribution-safe fixture is available.
+| Area | What you can edit |
+| --- | --- |
+| **Character** | Name, difficulty, appearance, health, mana, play time, permanent upgrades, tax savings, death counters, team, and voice where supported by the file format |
+| **Inventory** | All 58 carried slots, stack counts, favorite state, and exact numeric prefixes |
+| **Equipment** | Three loadouts, armor, accessories, vanity slots, dyes, pets, light pets, minecarts, mounts, and hooks |
+| **Storage** | Piggy Bank, Safe, Defender's Forge, and Void Vault |
+| **Item Catalog** | Browse 6,170 items by category and rarity; search by name or numeric ID; sort and insert directly into a compatible slot |
+| **Effects** | All 44 saved buff slots |
+| **Journey Mode** | Research progress, Godmode, extended placement range, enemy spawn rate, and Super Cart flags |
+| **Spawn Points** | View, add, edit, and remove named spawn records |
 
-## Local game data
+Additional quality-of-life features include:
 
-The desktop app automatically looks for Steam/GOG Terraria installations in standard macOS, Windows, and Linux locations. When found, it reads `Content/Images/Item_*.xnb` and `Buff_*.xnb`, strictly decodes XNA color textures, selects Terraria's first inventory frame for animated items, preserves Terraria's original transparent canvas and relative item scale, and writes regular PNGs to PlrForge's private application cache. Fixed-size UI viewports center and contain that untouched pixel art in each surface.
-
-On macOS and Windows, a small open-source helper also reads `Terraria.exe` through Terraria's own local .NET runtime. It calls the installed version's `Item.SetDefaults` implementation and reads its embedded English localization, producing a versioned private cache of item damage, speed, knockback, tool power, healing, value, descriptive tooltip lines, and related fields. Prefix-adjusted variants are resolved locally on demand, so modifier tooltips use the installed game's exact computed values. The current Terraria 1.4.5.7 installation yields 6,159 usable definitions. The helper does not start Terraria, change its files, connect to a network, or include extracted game data in PlrForge's application bundle. If the assembly layout changes, metadata tooltips fall back to the bundled catalog while character editing and icons continue working.
-
-If Terraria is installed somewhere unusual, use the game-data control in the header and choose the Terraria install, `Content`, or `Images` folder. Local icons and detailed tooltips are optional: loading and editing remain fully functional with the built-in catalog and text glyphs.
+- Native Terraria item and buff icons extracted from the user's own installation
+- Detailed, prefix-aware item tooltips generated from the installed game
+- Shared undo and redo history across the editor
+- Automatic timestamped backups before every successful save
+- Backup browsing and guarded restore inside the app
+- Manual and opt-in launch-time update checks through GitHub Releases
+- Graceful text fallbacks when Terraria assets are unavailable
 
 ## Save safety
 
-PlrForge never mutates a loaded file in memory without tracking the change. Before saving it:
+Every save passes through the native Rust layer and follows the same guarded transaction:
 
-1. Checks that the file still matches the hash that was originally loaded.
-2. Validates every editable character field, item surface, buff, spawn record, Journey record, slot count, stack rule, and supported file version.
-3. Creates a timestamped copy in a sibling `.plrforge-backups` directory.
-4. Writes and decrypts a staged file to verify byte-for-byte plaintext integrity.
-5. Replaces the original and reports the recoverable backup path.
+1. Confirm that the source file has not changed since it was opened.
+2. Validate the character, items, buffs, spawn points, Journey data, stack rules, slot counts, and file version.
+3. Create a timestamped copy in a sibling `.plrforge-backups` directory.
+4. Write to a staged file, decrypt it again, and verify the plaintext payload.
+5. Atomically replace the original file and report the backup location.
 
-Do not edit a character while Terraria is running. Steam Cloud can otherwise race the local save.
+If something goes wrong, follow the [character recovery guide](docs/RECOVERY.md).
 
-The **Backups** workspace lists only the active character's verified backups. Restoring is disabled while the editor has unsaved changes, requires a second confirmation, and preserves the current `.plr` as a new `pre-restore` backup before replacement. **Reveal** opens the containing folder without exposing arbitrary paths to the webview.
+## Compatibility
 
-## Release checks
+PlrForge currently enables editing only for player-file layouts with dedicated regression coverage. Unknown and newer formats fail closed instead of risking a damaged character.
 
-The app header and **Settings** workspace both provide a manual update check, while Settings also contains an opt-in “check automatically on launch” preference. Official GitHub Actions builds compile their source repository into the app via `PLRFORGE_GITHUB_REPOSITORY=${{ github.repository }}`. The app asks GitHub's public `releases/latest` endpoint for metadata, compares semantic versions, and can open the matching release page. It does not download or install code. Local builds without a configured repository report that update checks are unavailable instead of guessing a feed.
+| Platform / format | Support |
+| --- | --- |
+| macOS, Apple silicon and Intel | Universal application bundle and DMG |
+| Windows 10/11, x64 | MSI and NSIS installers |
+| Terraria player format v279 | Verified |
+| Terraria player formats v317 and v325 | Verified |
+| Other `.plr` versions | Detected, but editing remains disabled until verified |
 
-To configure a local or third-party build:
+See the [full compatibility matrix](docs/COMPATIBILITY.md) for format-specific details and exclusions.
 
-```sh
-PLRFORGE_GITHUB_REPOSITORY=owner/repository npm run desktop:build
+## Getting started
+
+1. Visit [GitHub Releases](https://github.com/Gabriel0110/plrforge/releases) and download the build for your platform. If no packaged build is available for the current revision, use the [development instructions](#development).
+2. Fully close Terraria.
+3. Start PlrForge and choose **Open Player**.
+4. Select a `.plr` file, make your changes, and choose **Save changes**.
+5. Reopen the character in PlrForge, then verify it in Terraria before removing any recovery copies.
+
+Default player folders:
+
+- **macOS:** `~/Library/Application Support/Terraria/Players`
+- **Windows:** `%USERPROFILE%\Documents\My Games\Terraria\Players`
+
+Preview builds are not yet Apple-notarized or Windows code-signed. Review the release notes and checksum manifest before installing a preview.
+
+## Local Terraria data
+
+PlrForge does not bundle, download, or hotlink Terraria artwork or extracted game definitions. The desktop app discovers a local Steam or GOG installation and builds a private application cache from that copy of the game.
+
+- `Item_*.xnb` and `Buff_*.xnb` textures are decoded into local PNG files without resampling, recoloring, or changing Terraria's transparent sprite canvas.
+- A small open-source metadata helper reads the installed game's item defaults and English localization to provide damage, speed, knockback, tool power, healing, value, descriptive text, and exact prefix-adjusted values.
+- Terraria is never launched or modified, and no game data is sent over the network.
+- If extraction is unavailable or a game update changes the assembly layout, editing continues with the bundled searchable catalog and text fallbacks.
+
+For a non-standard installation, use the game-data control in the app header and select the Terraria installation, `Content`, or `Images` folder.
+
+## Why Tauri
+
+PlrForge keeps the user interface and save-file engine behind a strict boundary:
+
+```text
+React + TypeScript editor
+          │ validated commands
+          ▼
+Rust / Tauri native layer
+          │
+          ├── versioned .plr codecs
+          ├── validation and encryption
+          ├── verified backup/save transaction
+          └── local icon and metadata adapters
 ```
 
-Published release tags must be semantic versions such as `v0.2.0`, and the versions in `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` must agree. The manual **Release preview** workflow enforces that invariant, creates universal macOS and Windows bundles in a draft prerelease, and attaches a verified SHA-256 manifest. Preview macOS builds use an ad-hoc signature; neither platform is identity-signed yet. A signed in-app installer is intentionally deferred until the project has permanent macOS/Windows signing identities and a protected Tauri updater key.
+Tauri provides a lightweight native application using the operating system's webview, while Rust owns all file access, decryption, validation, backup, and write operations. The same codebase produces universal macOS bundles and Windows installers.
+
+## Development
+
+### Prerequisites
+
+- [Node.js 22](https://nodejs.org/)
+- [Rust stable](https://rustup.rs/)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) for the metadata helper
+- The platform dependencies in the [Tauri prerequisites guide](https://v2.tauri.app/start/prerequisites/)
+
+### Run the desktop app
+
+```sh
+git clone https://github.com/Gabriel0110/plrforge.git
+cd plrforge
+npm ci
+npm run metadata:build
+npm run desktop:dev
+```
+
+The browser-only preview uses a disposable demo character and cannot access native `.plr` files:
+
+```sh
+npm run dev
+```
+
+### Test and build
+
+```sh
+npm test
+npm run build
+cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+cargo test --locked --manifest-path src-tauri/Cargo.toml
+npm run desktop:build
+```
+
+An optional real-format regression test can run against a disposable copy of a supported player file. The test copies the fixture into a temporary directory before writing; never use a live Steam Cloud character or commit a personal `.plr` file.
+
+```sh
+PLRFORGE_FIXTURE=/absolute/path/to/disposable.plr \
+  cargo test --manifest-path src-tauri/Cargo.toml external_fixture -- --nocapture
+```
+
+## Project documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — application boundaries, codecs, save transactions, local asset handling, and testing strategy
+- [Compatibility](docs/COMPATIBILITY.md) — supported player-file versions and fail-closed behavior
+- [Recovery](docs/RECOVERY.md) — in-app and manual character restoration
+- [Release guide](docs/RELEASE.md) — packaging, validation, checksums, and preview publication
+- [Contributing](CONTRIBUTING.md) — local setup, testing expectations, and pull-request guidance
+
+## Contributing
+
+Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before making a change. Save-format changes require focused tests and must preserve PlrForge's fail-closed behavior.
+
+When reporting a character-file issue, include the detected file version and application error message, but **do not attach a personal `.plr` file publicly**.
 
 ## Data and licensing
 
-The searchable fallback item and buff metadata is distributed under the Microsoft Public License and derived in part from the TEdit project. See `THIRD_PARTY_MS-PL.txt`. PlrForge does not bundle, download, or hotlink Terraria sprites, tooltip text, or extracted item defaults. Its optional adapter creates a disposable local cache from the user's own installed copy. Terraria and its artwork are owned by Re-Logic.
+PlrForge is available under the [MIT License](LICENSE).
 
-## Status
-
-See the [compatibility matrix](docs/COMPATIBILITY.md), [recovery guide](docs/RECOVERY.md), [product plan](docs/PRODUCT_PLAN.md), [architecture](docs/ARCHITECTURE.md), and [release checklist](docs/RELEASE.md).
-
-The project also includes a one-command macOS run loop at `script/build_and_run.sh` and a Codex `Run` action in `.codex/environments/environment.toml`.
+The bundled fallback item and buff metadata is licensed under the Microsoft Public License and is derived in part from the [TEdit](https://github.com/TEdit/Terraria-Map-Editor) project. See [THIRD_PARTY_MS-PL.txt](THIRD_PARTY_MS-PL.txt) for attribution. Terraria and its artwork are owned by Re-Logic.
