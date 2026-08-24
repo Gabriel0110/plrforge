@@ -140,7 +140,7 @@ pub fn discover_players() -> Result<Vec<DiscoveredPlayer>, SaveError> {
             });
         }
     }
-    players.sort_by(|left, right| right.modified_at.cmp(&left.modified_at));
+    players.sort_by_key(|player| std::cmp::Reverse(player.modified_at));
     Ok(players)
 }
 
