@@ -48,7 +48,7 @@ export function ItemSlotButton({
       >
         {hotbar && <span className="absolute inset-x-2 top-0 h-px bg-emerald-300/40" />}
         {showIndex && <span className={`absolute left-1.5 top-1 font-mono text-[8px] ${hotbar ? "text-emerald-100/42" : "text-white/25"}`}>{item.slot + 1}</span>}
-        <span className="grid size-full place-items-center pt-0.5">
+        <span className="grid size-full place-items-center">
           <ItemGlyph itemId={item.itemId} slot />
         </span>
         {item.stack > 1 && (
