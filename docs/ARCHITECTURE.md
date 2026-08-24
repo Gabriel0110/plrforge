@@ -48,9 +48,13 @@ PlrForge never ships or fetches Terraria artwork. A native Tauri command discove
 
 The format implementation is grounded in the open-source [TExtract XNB extractor](https://github.com/Antag99/TExtract/blob/master/TExtract/src/com/github/antag99/textract/extract/XnbExtractor.java), uses the audited [`lzxd` Rust decoder](https://docs.rs/lzxd/latest/lzxd/), and follows Tauri's [scoped asset-protocol model](https://v2.tauri.app/security/asset-protocol/).
 
-Animated item sheets are cropped by Terraria v325's exact registered frame rules, including the current `ItemID.Sets.IsFood` membership. Item textures then lose only fully transparent outer rows and columns; visible and translucent pixels are neither resampled nor recolored. The shared React glyph viewport clips, centers, and pixel-renders the result at a bounded visual size across inventory, storage, inspector, search, Journey, and Item Catalog surfaces.
+Animated item sheets are cropped by Terraria v325's exact registered frame rules, including the current `ItemID.Sets.IsFood` membership. Every frame retains Terraria's original transparent canvas because that padding encodes the intended relative item scale and alignment; pixels are never resampled or recolored. Shared React glyph viewports center, contain, and pixel-render the result across inventory, storage, inspector, search, Journey, and Item Catalog surfaces.
 
 Extracted PNGs live below the OS application-cache directory. Tauri's asset protocol is enabled only for `$APPCACHE/terraria-assets/**/*`; original game resources and unrelated filesystem locations are never exposed to the webview. A completed versioned fingerprint is reused on later launches, while a changed installation or normalization version produces a new cache. Missing or invalid assets degrade to deterministic text glyphs and never block save editing.
+
+## Local item metadata adapter
+
+The bundled `PlrForge.Metadata.exe` helper is built from `metadata-helper/Program.cs` and embedded as a small managed executable. On macOS, PlrForge runs it through the MonoKickstart runtime already owned by the detected Terraria installation; Windows uses the operating system's .NET Framework loader. The helper loads the local `Terraria.exe`, resolves Terraria's embedded dependencies, sets a disposable save path, calls `Item.SetDefaults` for each current item ID, expands English localization references, and applies requested numeric prefixes without launching the game. Rust validates the schema and keeps base definitions plus keyed prefix variants inside the fingerprinted application cache. React receives only the validated records through Tauri commands. Extraction failure is isolated from icons and save editing.
 
 ## Testing strategy
 

@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -32,6 +35,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: npm ci
+      - run: npm run metadata:build
       - run: npm run build
       - run: npm run test
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
@@ -64,10 +68,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rustTargets }}
       - run: npm ci
+      - run: npm run metadata:build
       - name: Build desktop bundles
         uses: tauri-apps/tauri-action@v1
         env:

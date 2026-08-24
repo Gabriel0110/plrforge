@@ -1,4 +1,5 @@
 mod assets;
+mod metadata;
 mod save;
 mod updates;
 
@@ -84,12 +85,37 @@ async fn prepare_game_assets(
                 cache_path: None,
                 item_count: 0,
                 buff_count: 0,
+                metadata_count: 0,
+                metadata_message: "Local item details are unavailable.".into(),
                 message: error.to_string(),
             },
         }
     })
     .await
     .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn load_game_item_metadata(
+    app: AppHandle,
+    cache_path: String,
+) -> Result<metadata::GameMetadataCatalog, String> {
+    metadata::load_for_app(&app, &cache_path).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+async fn load_game_item_variants(
+    app: AppHandle,
+    cache_path: String,
+    requests: Vec<metadata::ItemMetadataRequest>,
+) -> Result<Vec<metadata::GameItemMetadata>, String> {
+    let task_app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        metadata::load_variants_for_app(&task_app, &cache_path, requests)
+            .map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -107,7 +133,9 @@ pub fn run() {
             reveal_backup,
             check_for_updates,
             open_release_page,
-            prepare_game_assets
+            prepare_game_assets,
+            load_game_item_metadata,
+            load_game_item_variants
         ])
         .run(tauri::generate_context!())
         .expect("error while running PlrForge");

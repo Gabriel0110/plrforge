@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -36,6 +39,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
       - run: npm ci
+      - run: npm run metadata:build
       - id: version
         name: Verify release version
         run: node script/release.mjs verify --expected "${{ inputs.version }}"
@@ -70,10 +74,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rustTargets }}
       - run: npm ci
+      - run: npm run metadata:build
       - name: Build and upload preview bundles
         uses: tauri-apps/tauri-action@v1
         env:

@@ -1,7 +1,9 @@
 import { Star } from "@phosphor-icons/react";
-import { useId, useLayoutEffect, useState, type FocusEvent, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useState, type FocusEvent, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { findItem, itemCategories, itemMatchesCategory, prefixes } from "../data/catalog";
+import { useGameAssets } from "../lib/assets";
+import type { GameItemMetadata } from "../lib/native";
 
 type TriggerProps = {
   "aria-describedby"?: string;
@@ -41,10 +43,68 @@ const rarityColors: Record<string, string> = {
 
 function positionFor(anchor: HTMLElement): Position {
   const rect = anchor.getBoundingClientRect();
-  const width = 270;
+  const width = 310;
   const left = Math.max(12, Math.min(window.innerWidth - width - 12, rect.left + rect.width / 2 - width / 2));
-  if (window.innerHeight - rect.bottom >= 210) return { left, top: rect.bottom + 9 };
+  if (window.innerHeight - rect.bottom >= 320) return { left, top: rect.bottom + 9 };
   return { left, bottom: window.innerHeight - rect.top + 9 };
+}
+
+function damageClass(metadata: GameItemMetadata) {
+  if (metadata.melee) return "melee";
+  if (metadata.ranged) return "ranged";
+  if (metadata.magic) return "magic";
+  if (metadata.summon) return "summon";
+  return "weapon";
+}
+
+function speedLabel(useAnimation: number) {
+  if (useAnimation <= 8) return "Insanely fast";
+  if (useAnimation <= 20) return "Very fast";
+  if (useAnimation <= 25) return "Fast";
+  if (useAnimation <= 30) return "Average";
+  if (useAnimation <= 35) return "Slow";
+  if (useAnimation <= 45) return "Very slow";
+  if (useAnimation <= 55) return "Extremely slow";
+  return "Snail";
+}
+
+function formatCoins(value: number) {
+  const platinum = Math.floor(value / 1_000_000);
+  const gold = Math.floor(value % 1_000_000 / 10_000);
+  const silver = Math.floor(value % 10_000 / 100);
+  const copper = value % 100;
+  return [
+    platinum ? `${platinum} platinum` : "",
+    gold ? `${gold} gold` : "",
+    silver ? `${silver} silver` : "",
+    copper ? `${copper} copper` : "",
+  ].filter(Boolean).join(" ") || "No value";
+}
+
+function nativeStatLines(metadata: GameItemMetadata) {
+  const lines: string[] = [];
+  if ((metadata.damage ?? 0) > 0) {
+    lines.push(`${metadata.damage} ${damageClass(metadata)} damage`);
+    if (!metadata.summon) lines.push(`${(metadata.crit ?? 0) + 4}% critical strike chance`);
+  }
+  if ((metadata.useAnimation ?? 0) > 0 && ((metadata.damage ?? 0) > 0 || (metadata.healLife ?? 0) > 0 || (metadata.healMana ?? 0) > 0)) {
+    lines.push(`${speedLabel(metadata.useAnimation!)} speed · ${metadata.useAnimation} ticks`);
+  }
+  if ((metadata.knockBack ?? 0) > 0) lines.push(`${metadata.knockBack} knockback`);
+  if ((metadata.mana ?? 0) > 0) lines.push(`Uses ${metadata.mana} mana`);
+  if ((metadata.defense ?? 0) > 0) lines.push(`${metadata.defense} defense`);
+  if ((metadata.pick ?? 0) > 0) lines.push(`${metadata.pick}% pickaxe power`);
+  if ((metadata.axe ?? 0) > 0) lines.push(`${metadata.axe! * 5}% axe power`);
+  if ((metadata.hammer ?? 0) > 0) lines.push(`${metadata.hammer}% hammer power`);
+  if ((metadata.healLife ?? 0) > 0) lines.push(`Restores ${metadata.healLife} life`);
+  if ((metadata.healMana ?? 0) > 0) lines.push(`Restores ${metadata.healMana} mana`);
+  if ((metadata.fishingPole ?? 0) > 0) lines.push(`${metadata.fishingPole}% fishing power`);
+  if ((metadata.bait ?? 0) > 0) lines.push(`${metadata.bait}% bait power`);
+  if ((metadata.tileBoost ?? 0) > 0) lines.push(`+${metadata.tileBoost} placement range`);
+  if (metadata.autoReuse) lines.push("Auto-reuse");
+  if (metadata.channel) lines.push("Channelled");
+  if ((metadata.value ?? 0) > 0) lines.push(`Value: ${formatCoins(metadata.value!)}`);
+  return lines;
 }
 
 export function ItemTooltip({ itemId, stack, prefix = 0, favorited = false, context, children }: Props) {
@@ -52,6 +112,14 @@ export function ItemTooltip({ itemId, stack, prefix = 0, favorited = false, cont
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [position, setPosition] = useState<Position | null>(null);
   const item = findItem(itemId);
+  const { itemMetadata, metadataVersion, prefetchItemMetadata } = useGameAssets();
+  const metadata = itemMetadata(itemId, prefix);
+
+  useEffect(() => {
+    if (anchor && prefix > 0 && metadata?.prefix !== prefix) {
+      void prefetchItemMetadata([{ id: itemId, prefix }]);
+    }
+  }, [anchor, itemId, metadata?.prefix, prefetchItemMetadata, prefix]);
 
   useLayoutEffect(() => {
     if (!anchor) {
@@ -79,7 +147,9 @@ export function ItemTooltip({ itemId, stack, prefix = 0, favorited = false, cont
   if (itemId <= 0 || !item) return <>{children(triggerProps)}</>;
 
   const rarity = item.rarity ?? "Common";
-  const modifier = prefixes.find((entry) => entry.id === prefix)?.name ?? `Prefix ${prefix}`;
+  const modifier = (prefixes.find((entry) => entry.id === prefix)?.name ?? `Prefix ${prefix}`).trim();
+  const displayName = metadata?.name ?? item.name;
+  const stats = metadata ? nativeStatLines(metadata) : [];
   const groups = itemCategories
     .filter(({ id }) => id !== "all" && id !== "other" && itemMatchesCategory(item, id))
     .slice(0, 3);
@@ -91,23 +161,27 @@ export function ItemTooltip({ itemId, stack, prefix = 0, favorited = false, cont
         <div
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none fixed z-[100] w-[270px] rounded-xl border border-white/14 bg-[#171c1a]/[0.98] p-3.5 text-left shadow-[0_20px_55px_-18px_rgba(0,0,0,.9)] backdrop-blur-md"
+          className="pointer-events-none fixed z-[100] max-h-[min(430px,calc(100vh-24px))] w-[310px] overflow-hidden rounded-xl border border-white/14 bg-[#171c1a]/[0.985] p-4 text-left shadow-[0_22px_60px_-18px_rgba(0,0,0,.94)] backdrop-blur-md"
           style={position}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold text-white/92">{modifier !== "None" ? `${modifier} ${item.name}` : item.name}</p>
+              <p className={`truncate text-[14px] font-semibold ${rarityColors[rarity] ?? "text-white/92"}`}>{modifier && modifier !== "None" ? `${modifier} ${displayName}` : displayName}</p>
               <p className={`mt-0.5 text-[10px] font-medium ${rarityColors[rarity] ?? "text-white/42"}`}>{rarity}</p>
             </div>
             {favorited && <Star weight="fill" className="mt-0.5 size-3.5 shrink-0 text-amber-300" />}
           </div>
-          {context && <p className="mt-2 border-t border-white/[0.07] pt-2 text-[10px] text-emerald-200/55">{context}</p>}
-          <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[9px] text-white/34">
+          {stats.length > 0 && <div className="mt-3 space-y-1 text-[11px] leading-4 text-white/72">{stats.map((line, index) => <p key={`${index}-${line}`}>{line}</p>)}</div>}
+          {metadata?.tooltip && <div className="mt-3 border-t border-white/[0.07] pt-2.5 text-[11px] leading-[1.45] text-sky-100/66">{metadata.tooltip.split("\n").map((line, index) => <p key={`${index}-${line}`}>{line}</p>)}</div>}
+          {prefix > 0 && metadata && metadata.prefix !== prefix && <p className="mt-2 text-[9px] leading-4 text-amber-200/45">Loading Terraria's exact {modifier} modifier values…</p>}
+          {context && <p className="mt-3 border-t border-white/[0.07] pt-2 text-[9px] uppercase tracking-[0.1em] text-emerald-200/44">{context}</p>}
+          <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[9px] text-white/30">
             <span>Item ID</span><span className="text-right text-white/58">{item.id}</span>
             {stack !== undefined && <><span>Stack</span><span className="text-right text-white/58">{stack.toLocaleString()}</span></>}
             <span>Stack limit</span><span className="text-right text-white/58">{(item.maxStackSize ?? 9999).toLocaleString()}</span>
           </div>
           {groups.length > 0 && <div className="mt-2.5 flex flex-wrap gap-1">{groups.map((group) => <span key={group.id} className="rounded-md border border-white/[0.07] bg-white/[0.035] px-1.5 py-1 text-[8px] font-medium text-white/38">{group.label}</span>)}</div>}
+          {metadataVersion && <p className="mt-2 font-mono text-[8px] text-white/20">Local Terraria {metadataVersion} data</p>}
         </div>,
         document.body,
       )}

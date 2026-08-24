@@ -65,12 +65,13 @@ export function SettingsPanel({
           <div className="flex items-start gap-4 p-5">
             <div className="grid size-10 shrink-0 place-items-center rounded-lg border border-sky-300/12 bg-sky-300/[0.04] text-sky-200/70"><ImagesSquare className="size-5" /></div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-[13px] font-semibold text-white/78">Terraria artwork</h2>
-              <p className="mt-1 text-[11px] leading-5 text-white/38">Icons are extracted from your own Terraria installation and cached locally. Game files are never uploaded.</p>
+              <h2 className="text-[13px] font-semibold text-white/78">Terraria game data</h2>
+              <p className="mt-1 text-[11px] leading-5 text-white/38">Icons, item defaults, and tooltip text are extracted from your own Terraria installation and cached locally. Game files are never uploaded.</p>
               <div className="mt-3 rounded-lg border border-white/[0.065] bg-black/10 px-3 py-2">
                 <p className="text-[10px] text-white/52">{assets.message}</p>
                 {assets.sourcePath && <p className="mt-1 truncate font-mono text-[9px] text-white/25" title={assets.sourcePath}>{assets.sourcePath}</p>}
                 {assets.state === "ready" && <p className="mt-1 font-mono text-[9px] text-emerald-200/48">{assets.itemCount.toLocaleString()} item icons · {assets.buffCount.toLocaleString()} buff icons</p>}
+                {assets.state === "ready" && <p className={`mt-1 font-mono text-[9px] ${assets.metadataCount > 0 ? "text-emerald-200/48" : "text-amber-200/48"}`}>{assets.metadataMessage}</p>}
               </div>
             </div>
             {assets.state !== "preview" && <button type="button" onClick={() => void locate()} disabled={assets.state === "preparing"} className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-white/[0.09] px-3 text-[11px] font-medium text-white/56 transition hover:bg-white/[0.05] hover:text-white/80 disabled:text-white/20">{assets.state === "preparing" && <CircleNotch className="size-3.5 animate-spin" />}{assets.state === "ready" ? "Change folder" : "Locate Terraria"}</button>}

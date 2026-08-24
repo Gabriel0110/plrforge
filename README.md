@@ -13,10 +13,11 @@ The current build loads encrypted desktop `.plr` files at versions 279, 317, and
 
 ## Development
 
-Prerequisites: Node.js 20+, Rust stable, and the platform requirements from the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) guide.
+Prerequisites: Node.js 20+, Rust stable, .NET 8 when rebuilding the metadata helper, and the platform requirements from the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) guide.
 
 ```sh
 npm install --cache /private/tmp/plrforge-npm-cache
+npm run metadata:build
 npm run dev
 npm run test
 npm run desktop:dev
@@ -32,11 +33,13 @@ PLRFORGE_FIXTURE=/absolute/path/to/disposable.plr cargo test --manifest-path src
 
 Never point release automation at a live Steam Cloud character or commit `.plr` fixtures. Sanitized format evidence remains local until a redistribution-safe fixture is available.
 
-## Local game icons
+## Local game data
 
-The desktop app automatically looks for Steam/GOG Terraria installations in standard macOS, Windows, and Linux locations. When found, it reads only `Content/Images/Item_*.xnb` and `Buff_*.xnb`, strictly decodes XNA color textures, selects Terraria's first inventory frame for animated items, removes only fully transparent outer pixels, and writes regular PNGs to PlrForge's private application cache. A clipped, fixed-size UI viewport centers each untouched pixel-art texture so unusually narrow or tall sprites cannot escape a slot. The first extraction currently prepares 6,134 item icons and 400 buff icons from Terraria v325; later launches reuse the fingerprinted cache.
+The desktop app automatically looks for Steam/GOG Terraria installations in standard macOS, Windows, and Linux locations. When found, it reads `Content/Images/Item_*.xnb` and `Buff_*.xnb`, strictly decodes XNA color textures, selects Terraria's first inventory frame for animated items, preserves Terraria's original transparent canvas and relative item scale, and writes regular PNGs to PlrForge's private application cache. Fixed-size UI viewports center and contain that untouched pixel art in each surface.
 
-If Terraria is installed somewhere unusual, use the game-icons control in the header and choose the Terraria install, `Content`, or `Images` folder. Icons are optional: loading and editing remain fully functional with the built-in text glyphs.
+On macOS and Windows, a small open-source helper also reads `Terraria.exe` through Terraria's own local .NET runtime. It calls the installed version's `Item.SetDefaults` implementation and reads its embedded English localization, producing a versioned private cache of item damage, speed, knockback, tool power, healing, value, descriptive tooltip lines, and related fields. Prefix-adjusted variants are resolved locally on demand, so modifier tooltips use the installed game's exact computed values. The current Terraria 1.4.5.7 installation yields 6,159 usable definitions. The helper does not start Terraria, change its files, connect to a network, or include extracted game data in PlrForge's application bundle. If the assembly layout changes, metadata tooltips fall back to the bundled catalog while character editing and icons continue working.
+
+If Terraria is installed somewhere unusual, use the game-data control in the header and choose the Terraria install, `Content`, or `Images` folder. Local icons and detailed tooltips are optional: loading and editing remain fully functional with the built-in catalog and text glyphs.
 
 ## Save safety
 
@@ -66,7 +69,7 @@ Published release tags must be semantic versions such as `v0.2.0`, and the versi
 
 ## Data and licensing
 
-The searchable item and buff metadata is distributed under the Microsoft Public License and derived in part from the TEdit project. See `THIRD_PARTY_MS-PL.txt`. PlrForge does not bundle, download, or hotlink Terraria sprites or other game assets. Its optional asset adapter creates a disposable local cache from the user's own installed copy. Terraria and its artwork are owned by Re-Logic.
+The searchable fallback item and buff metadata is distributed under the Microsoft Public License and derived in part from the TEdit project. See `THIRD_PARTY_MS-PL.txt`. PlrForge does not bundle, download, or hotlink Terraria sprites, tooltip text, or extracted item defaults. Its optional adapter creates a disposable local cache from the user's own installed copy. Terraria and its artwork are owned by Re-Logic.
 
 ## Status
 

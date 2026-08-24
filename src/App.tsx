@@ -176,19 +176,19 @@ function AssetStatusButton() {
   const { status, locate } = useGameAssets();
   if (status.state === "preview") return null;
   if (status.state === "preparing") {
-    return <span title={status.message} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.07] px-3 text-[10px] text-white/38"><CircleNotch className="size-3.5 animate-spin" /><span className="hidden xl:inline">Preparing icons</span></span>;
+    return <span title={status.message} className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.07] px-3 text-[10px] text-white/38"><CircleNotch className="size-3.5 animate-spin" /><span className="hidden xl:inline">Preparing game data</span></span>;
   }
   const ready = status.state === "ready";
   return (
     <button
       type="button"
       onClick={() => void locate()}
-      title={`${status.message}${status.sourcePath ? `\n${status.sourcePath}` : ""}`}
-      aria-label={ready ? "Change Terraria game icon source" : "Locate Terraria to add game icons"}
+      title={`${status.message}\n${status.metadataMessage}${status.sourcePath ? `\n${status.sourcePath}` : ""}`}
+      aria-label={ready ? "Change Terraria game data source" : "Locate Terraria to add game data"}
       className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-[10px] transition ${ready ? "border-sky-300/12 bg-sky-300/[0.035] text-sky-100/58 hover:bg-sky-300/[0.07]" : "border-amber-300/15 bg-amber-300/[0.035] text-amber-100/68 hover:bg-amber-300/[0.07]"}`}
     >
       <ImagesSquare className="size-3.5" />
-      <span className="hidden xl:inline">{ready ? `${status.itemCount.toLocaleString()} item icons` : "Add game icons"}</span>
+      <span className="hidden xl:inline">{ready ? status.metadataCount > 0 ? `${status.metadataCount.toLocaleString()} item details` : `${status.itemCount.toLocaleString()} item icons` : "Add game data"}</span>
     </button>
   );
 }

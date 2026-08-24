@@ -17,7 +17,57 @@ export type GameAssetStatus = {
   cachePath: string | null;
   itemCount: number;
   buffCount: number;
+  metadataCount: number;
+  metadataMessage: string;
   message: string;
+};
+
+export type GameItemMetadata = {
+  id: number;
+  key?: string;
+  name?: string;
+  tooltip?: string;
+  damage?: number;
+  crit?: number;
+  knockBack?: number;
+  useTime?: number;
+  useAnimation?: number;
+  mana?: number;
+  defense?: number;
+  pick?: number;
+  axe?: number;
+  hammer?: number;
+  healLife?: number;
+  healMana?: number;
+  bait?: number;
+  fishingPole?: number;
+  tileBoost?: number;
+  useAmmo?: number;
+  ammo?: number;
+  buffType?: number;
+  buffTime?: number;
+  mountType?: number;
+  createTile?: number;
+  createWall?: number;
+  value?: number;
+  rare?: number;
+  maxStack?: number;
+  prefix?: number;
+  melee?: boolean;
+  ranged?: boolean;
+  magic?: boolean;
+  summon?: boolean;
+  accessory?: boolean;
+  consumable?: boolean;
+  material?: boolean;
+  autoReuse?: boolean;
+  channel?: boolean;
+};
+
+export type GameMetadataCatalog = {
+  schemaVersion: number;
+  terrariaVersion: string;
+  items: GameItemMetadata[];
 };
 
 export type BackupEntry = {
@@ -75,6 +125,8 @@ export function prepareGameAssets(sourcePath?: string): Promise<GameAssetStatus>
       cachePath: null,
       itemCount: 0,
       buffCount: 0,
+      metadataCount: 0,
+      metadataMessage: "Local item details require the desktop app and an installed copy of Terraria.",
       message: "Game icons are available in the desktop app from a locally installed copy of Terraria.",
     });
   }
@@ -85,6 +137,14 @@ export function prepareGameAssets(sourcePath?: string): Promise<GameAssetStatus>
   });
   automaticAssetPreparation = preparation;
   return preparation;
+}
+
+export function loadGameItemMetadata(cachePath: string): Promise<GameMetadataCatalog> {
+  return invoke("load_game_item_metadata", { cachePath });
+}
+
+export function loadGameItemVariants(cachePath: string, requests: Array<{ id: number; prefix: number }>): Promise<GameItemMetadata[]> {
+  return invoke("load_game_item_variants", { cachePath, requests });
 }
 
 export function gameAssetUrl(cachePath: string, kind: "item" | "buff", id: number) {

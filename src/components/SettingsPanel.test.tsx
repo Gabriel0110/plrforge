@@ -10,6 +10,8 @@ vi.mock("../lib/assets", () => ({
       cachePath: "/cache/terraria-assets",
       itemCount: 6000,
       buffCount: 350,
+      metadataCount: 5980,
+      metadataMessage: "5,980 local item definitions loaded from Terraria 1.4.5.7.",
       message: "Terraria artwork is ready.",
     },
     locate: vi.fn(),

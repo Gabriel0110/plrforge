@@ -1,3 +1,4 @@
+use crate::metadata;
 use lzxd::{Lzxd, WindowSize};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -11,7 +12,7 @@ use std::{
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
 
-const CACHE_VERSION: &str = "xnb-textures-v3";
+const CACHE_VERSION: &str = "xnb-textures-v4";
 const COMPLETE_MARKER: &str = ".complete";
 
 #[derive(Debug, Error)]
@@ -40,10 +41,12 @@ pub struct GameAssetStatus {
     pub cache_path: Option<String>,
     pub item_count: usize,
     pub buff_count: usize,
+    pub metadata_count: usize,
+    pub metadata_message: String,
     pub message: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 struct Texture {
     width: u32,
     height: u32,
@@ -94,6 +97,18 @@ pub fn prepare(
         )?;
     }
 
+    let (metadata_count, metadata_message) = match metadata::prepare(&source, &cache_root) {
+        Ok(catalog) => (
+            catalog.items.len(),
+            format!(
+                "{} local item definitions loaded from Terraria {}.",
+                catalog.items.len(),
+                catalog.terraria_version
+            ),
+        ),
+        Err(error) => (0, format!("Local item details are unavailable: {error}")),
+    };
+
     persist_source(app, &source)?;
     Ok(GameAssetStatus {
         state: "ready".into(),
@@ -101,6 +116,8 @@ pub fn prepare(
         cache_path: Some(cache_root.to_string_lossy().into_owned()),
         item_count,
         buff_count,
+        metadata_count,
+        metadata_message,
         message: format!("{item_count} item icons and {buff_count} buff icons are ready."),
     })
 }
@@ -122,6 +139,8 @@ pub fn missing_status(error: &AssetError) -> GameAssetStatus {
         cache_path: None,
         item_count: 0,
         buff_count: 0,
+        metadata_count: 0,
+        metadata_message: "Local item details require a detected Terraria installation.".into(),
         message: error.to_string(),
     }
 }
@@ -294,9 +313,8 @@ fn extract_texture(source: &Path, target: &Path) -> Result<(), AssetError> {
     let mut texture = decode_texture_xnb(&fs::read(source)?)?;
     if asset_kind(source) == Some("Item") {
         if let Some(id) = asset_id(source) {
-            texture = first_item_frame(texture, item_frame_count(id))?;
+            texture = prepare_item_texture(texture, id)?;
         }
-        texture = trim_transparent_edges(texture);
     }
     let temporary = target.with_extension("png.tmp");
     let file = fs::File::create(&temporary)?;
@@ -332,6 +350,12 @@ fn item_frame_count(id: u32) -> u32 {
     }
 }
 
+fn prepare_item_texture(texture: Texture, id: u32) -> Result<Texture, AssetError> {
+    // Terraria's transparent canvas is intentional and keeps the relative scale/alignment of
+    // differently shaped items. Only animation frames are separated; opaque bounds stay intact.
+    first_item_frame(texture, item_frame_count(id))
+}
+
 fn first_item_frame(texture: Texture, frame_count: u32) -> Result<Texture, AssetError> {
     if frame_count <= 1 {
         return Ok(texture);
@@ -349,48 +373,6 @@ fn first_item_frame(texture: Texture, frame_count: u32) -> Result<Texture, Asset
         height: frame_height,
         rgba: texture.rgba[..byte_count].to_vec(),
     })
-}
-
-fn trim_transparent_edges(texture: Texture) -> Texture {
-    let mut left = texture.width;
-    let mut top = texture.height;
-    let mut right = 0;
-    let mut bottom = 0;
-    let mut visible = false;
-
-    for y in 0..texture.height {
-        for x in 0..texture.width {
-            let alpha = texture.rgba[((y * texture.width + x) * 4 + 3) as usize];
-            if alpha == 0 {
-                continue;
-            }
-            visible = true;
-            left = left.min(x);
-            top = top.min(y);
-            right = right.max(x);
-            bottom = bottom.max(y);
-        }
-    }
-
-    if !visible
-        || (left == 0 && top == 0 && right + 1 == texture.width && bottom + 1 == texture.height)
-    {
-        return texture;
-    }
-
-    let width = right - left + 1;
-    let height = bottom - top + 1;
-    let mut rgba = Vec::with_capacity((width * height * 4) as usize);
-    for y in top..=bottom {
-        let row_start = ((y * texture.width + left) * 4) as usize;
-        let row_end = row_start + (width * 4) as usize;
-        rgba.extend_from_slice(&texture.rgba[row_start..row_end]);
-    }
-    Texture {
-        width,
-        height,
-        rgba,
-    }
 }
 
 fn decode_texture_xnb(bytes: &[u8]) -> Result<Texture, AssetError> {
@@ -659,22 +641,16 @@ mod tests {
     }
 
     #[test]
-    fn trims_transparent_texture_edges_without_rescaling_pixels() {
-        let mut rgba = vec![0; 4 * 3 * 4];
-        rgba[20..24].copy_from_slice(&[10, 20, 30, 255]);
-        rgba[24..28].copy_from_slice(&[40, 50, 60, 128]);
-        assert_eq!(
-            trim_transparent_edges(Texture {
-                width: 4,
-                height: 3,
-                rgba
-            }),
-            Texture {
-                width: 2,
-                height: 1,
-                rgba: vec![10, 20, 30, 255, 40, 50, 60, 128],
-            }
-        );
+    fn preserves_the_native_transparent_canvas_for_static_items() {
+        let texture = Texture {
+            width: 3,
+            height: 3,
+            rgba: vec![
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 20, 30, 255, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+        };
+        assert_eq!(prepare_item_texture(texture.clone(), 1).unwrap(), texture);
     }
 
     #[test]

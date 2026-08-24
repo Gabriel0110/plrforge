@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "metadata:build": "dotnet build metadata-helper/PlrForge.Metadata.csproj --configuration Release && node script/metadata-helper.mjs",
     "preview": "vite preview",
     "test": "vitest run && node --test script/release.test.mjs",
     "test:watch": "vitest",
