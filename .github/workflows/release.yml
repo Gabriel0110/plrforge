@@ -23,8 +23,8 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -65,8 +65,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -107,7 +107,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_TAG: v${{ needs.quality.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download uploaded bundles
         run: gh release download "$RELEASE_TAG" --dir release-assets
       - name: Validate bundles and generate SHA-256 manifest
