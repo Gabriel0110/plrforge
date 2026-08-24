@@ -3,6 +3,7 @@ import { useMemo, useRef } from "react";
 import { searchItems } from "../data/catalog";
 import type { CatalogItem } from "../types";
 import { ItemGlyph } from "./ItemGlyph";
+import { ItemTooltip } from "./ItemTooltip";
 
 type Props = {
   query: string;
@@ -47,19 +48,21 @@ export function ItemSearch({ query, onQueryChange, onChoose, targetLabel, accept
           {results.length ? (
             <div className="max-h-[330px] overflow-y-auto p-1.5">
               {results.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  onClick={() => onChoose(item)}
-                  className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/[0.065] active:scale-[0.995]"
-                >
-                  <ItemGlyph itemId={item.id} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-medium text-white/88">{item.name}</span>
-                    <span className="font-mono text-[10px] text-white/34">ID {item.id} · stack limit {item.maxStackSize ?? 9999}</span>
-                  </span>
-                  <Plus className="size-4 text-emerald-300/80" />
-                </button>
+                <ItemTooltip key={item.id} itemId={item.id} context="Search result">
+                  {(tooltipProps) => <button
+                    {...tooltipProps}
+                    type="button"
+                    onClick={() => onChoose(item)}
+                    className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition hover:bg-white/[0.065] active:scale-[0.995]"
+                  >
+                    <ItemGlyph itemId={item.id} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-medium text-white/88">{item.name}</span>
+                      <span className="font-mono text-[10px] text-white/34">ID {item.id} · stack limit {item.maxStackSize ?? 9999}</span>
+                    </span>
+                    <Plus className="size-4 text-emerald-300/80" />
+                  </button>}
+                </ItemTooltip>
               ))}
             </div>
           ) : (

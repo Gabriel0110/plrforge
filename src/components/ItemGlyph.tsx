@@ -26,13 +26,13 @@ function AssetGlyph({ kind, id, fallback, large = false, slot = false }: { kind:
     <span
       aria-hidden="true"
       className={`grid shrink-0 place-items-center overflow-hidden rounded-md border font-mono font-semibold tracking-[-0.04em] ${
-        large ? "size-16 text-base" : slot ? "size-10 text-[11px]" : "size-8 text-[11px]"
+        large ? "size-16 text-base" : slot ? "size-11 text-[11px]" : "size-9 text-[11px]"
       } ${url && !failed ? "border-transparent bg-transparent" : ""
       }`}
       style={url && !failed ? undefined : { backgroundColor: `${color}26`, borderColor: `${color}78`, color }}
     >
       {url && !failed
-        ? <img src={url} alt="" draggable={false} onError={() => setFailed(true)} className="block h-full w-full object-contain p-0.5 [image-rendering:pixelated]" />
+        ? <img src={url} alt="" draggable={false} onError={() => setFailed(true)} className={`block h-full w-full object-contain [image-rendering:pixelated] ${large ? "p-0.5" : "p-1"}`} />
         : fallback}
     </span>
   );

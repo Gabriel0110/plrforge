@@ -2,6 +2,7 @@ import { Backpack, HeartStraight, Lightning, Star } from "@phosphor-icons/react"
 import { itemName } from "../data/catalog";
 import type { InventoryItem } from "../types";
 import { ItemGlyph } from "./ItemGlyph";
+import { ItemTooltip } from "./ItemTooltip";
 
 type Props = {
   inventory: InventoryItem[];
@@ -26,35 +27,38 @@ export function ItemSlotButton({
 }) {
   const name = itemName(item.itemId);
   return (
-    <button
-      type="button"
-      aria-label={`${label ?? `Slot ${item.slot + 1}`}: ${name}${item.stack > 1 ? `, stack ${item.stack}` : ""}`}
-      aria-pressed={selected}
-      onClick={onSelect}
-      className={`group relative aspect-square min-w-0 overflow-hidden rounded-lg border p-1 text-left transition duration-200 ease-out active:scale-[0.98] ${
-        selected
-          ? "border-emerald-400/80 bg-emerald-400/10 shadow-[inset_0_0_0_1px_rgba(52,211,153,.22)]"
-          : item.itemId > 0
-            ? hotbar
-              ? "border-emerald-200/20 bg-emerald-300/[0.045] hover:border-emerald-200/38 hover:bg-emerald-300/[0.075]"
-              : "border-white/14 bg-white/[0.045] hover:border-white/28 hover:bg-white/[0.075]"
-            : hotbar
-              ? "border-emerald-200/12 bg-emerald-300/[0.025] hover:border-emerald-200/28"
-              : "border-white/[0.08] bg-white/[0.018] hover:border-white/18"
-      }`}
-    >
-      {hotbar && <span className="absolute inset-x-2 top-0 h-px bg-emerald-300/40" />}
-      {showIndex && <span className={`absolute left-1.5 top-1 font-mono text-[8px] ${hotbar ? "text-emerald-100/42" : "text-white/25"}`}>{item.slot + 1}</span>}
-      <span className="grid size-full place-items-center pt-0.5">
-        <ItemGlyph itemId={item.itemId} slot />
-      </span>
-      {item.stack > 1 && (
-        <span className="absolute bottom-1 right-1.5 rounded bg-[#121615]/80 px-1 font-mono text-[10px] text-white/80">
-          {item.stack}
+    <ItemTooltip itemId={item.itemId} stack={item.stack} prefix={item.prefix} favorited={item.favorited} context={label ?? `${hotbar ? "Hotbar" : "Slot"} ${item.slot + 1}`}>
+      {(tooltipProps) => <button
+        {...tooltipProps}
+        type="button"
+        aria-label={`${label ?? `Slot ${item.slot + 1}`}: ${name}${item.stack > 1 ? `, stack ${item.stack}` : ""}`}
+        aria-pressed={selected}
+        onClick={onSelect}
+        className={`group relative aspect-square min-w-0 overflow-hidden rounded-lg border p-1 text-left transition duration-200 ease-out active:scale-[0.98] ${
+          selected
+            ? "border-emerald-400/80 bg-emerald-400/10 shadow-[inset_0_0_0_1px_rgba(52,211,153,.22)]"
+            : item.itemId > 0
+              ? hotbar
+                ? "border-emerald-200/20 bg-emerald-300/[0.045] hover:border-emerald-200/38 hover:bg-emerald-300/[0.075]"
+                : "border-white/14 bg-white/[0.045] hover:border-white/28 hover:bg-white/[0.075]"
+              : hotbar
+                ? "border-emerald-200/12 bg-emerald-300/[0.025] hover:border-emerald-200/28"
+                : "border-white/[0.08] bg-white/[0.018] hover:border-white/18"
+        }`}
+      >
+        {hotbar && <span className="absolute inset-x-2 top-0 h-px bg-emerald-300/40" />}
+        {showIndex && <span className={`absolute left-1.5 top-1 font-mono text-[8px] ${hotbar ? "text-emerald-100/42" : "text-white/25"}`}>{item.slot + 1}</span>}
+        <span className="grid size-full place-items-center pt-0.5">
+          <ItemGlyph itemId={item.itemId} slot />
         </span>
-      )}
-      {item.favorited && <Star weight="fill" className="absolute right-1 top-1 size-3 text-amber-300" />}
-    </button>
+        {item.stack > 1 && (
+          <span className="absolute bottom-1 right-1.5 rounded bg-[#121615]/80 px-1 font-mono text-[10px] text-white/80">
+            {item.stack}
+          </span>
+        )}
+        {item.favorited && <Star weight="fill" className="absolute right-1 top-1 size-3 text-amber-300" />}
+      </button>}
+    </ItemTooltip>
   );
 }
 

@@ -16,6 +16,7 @@ import {
 } from "../data/catalog";
 import type { CatalogItem, ItemCategory } from "../types";
 import { ItemGlyph } from "./ItemGlyph";
+import { ItemTooltip } from "./ItemTooltip";
 
 const PAGE_SIZE = 96;
 type SortMode = "id-asc" | "id-desc" | "name-asc" | "name-desc" | "stack-desc";
@@ -158,22 +159,24 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
                   const group = primaryCategory(item);
                   const itemRarity = item.rarity ?? "Common";
                   return (
-                    <article key={item.id} className={`group relative flex min-h-[150px] flex-col rounded-xl border p-3 transition ${fits ? "border-white/[0.08] bg-white/[0.022] hover:border-white/16 hover:bg-white/[0.04]" : "border-white/[0.045] bg-black/[0.08] opacity-58"}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <ItemGlyph itemId={item.id} large />
-                        <span className="font-mono text-[9px] text-white/24">#{item.id}</span>
-                      </div>
-                      <h2 className="mt-2 line-clamp-2 text-[12px] font-medium leading-4 text-white/78" title={item.name}>{item.name}</h2>
-                      <div className="mt-auto flex items-end justify-between gap-2 pt-2">
-                        <div className="min-w-0">
-                          <p className={`truncate text-[9px] ${rarityTone[itemRarity] ?? "text-white/34"}`}>{itemRarity}</p>
-                          <p className="mt-0.5 truncate text-[9px] text-white/25">{group.label} · max {item.maxStackSize ?? 9999}</p>
+                    <ItemTooltip key={item.id} itemId={item.id} context="Item Catalog">
+                      {(tooltipProps) => <article {...tooltipProps} className={`group relative flex min-h-[150px] flex-col rounded-xl border p-3 transition ${fits ? "border-white/[0.08] bg-white/[0.022] hover:border-white/16 hover:bg-white/[0.04]" : "border-white/[0.045] bg-black/[0.08] opacity-58"}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <ItemGlyph itemId={item.id} large />
+                          <span className="font-mono text-[9px] text-white/24">#{item.id}</span>
                         </div>
-                        <button type="button" disabled={!fits} onClick={() => onChoose(item)} aria-label={fits ? `Add ${item.name} to ${targetLabel}` : `${item.name} does not fit ${targetLabel}`} title={fits ? `Add to ${targetLabel}` : `Does not fit ${targetLabel}`} className="grid size-7 shrink-0 place-items-center rounded-lg border border-emerald-300/18 bg-emerald-300/[0.055] text-emerald-200/74 transition hover:bg-emerald-300/[0.12] disabled:border-white/[0.06] disabled:bg-transparent disabled:text-white/16">
-                          <Plus className="size-3.5" />
-                        </button>
-                      </div>
-                    </article>
+                        <h2 className="mt-2 line-clamp-2 text-[12px] font-medium leading-4 text-white/78" title={item.name}>{item.name}</h2>
+                        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+                          <div className="min-w-0">
+                            <p className={`truncate text-[9px] ${rarityTone[itemRarity] ?? "text-white/34"}`}>{itemRarity}</p>
+                            <p className="mt-0.5 truncate text-[9px] text-white/25">{group.label} · max {item.maxStackSize ?? 9999}</p>
+                          </div>
+                          <button type="button" disabled={!fits} onClick={() => onChoose(item)} aria-label={fits ? `Add ${item.name} to ${targetLabel}` : `${item.name} does not fit ${targetLabel}`} title={fits ? `Add to ${targetLabel}` : `Does not fit ${targetLabel}`} className="grid size-7 shrink-0 place-items-center rounded-lg border border-emerald-300/18 bg-emerald-300/[0.055] text-emerald-200/74 transition hover:bg-emerald-300/[0.12] disabled:border-white/[0.06] disabled:bg-transparent disabled:text-white/16">
+                            <Plus className="size-3.5" />
+                          </button>
+                        </div>
+                      </article>}
+                    </ItemTooltip>
                   );
                 })}
               </div>
