@@ -17,6 +17,7 @@ import {
 import type { CatalogItem, ItemCategory } from "../types";
 import { ItemGlyph } from "./ItemGlyph";
 import { ItemTooltip } from "./ItemTooltip";
+import { KeyboardGrid, RovingGroup } from "./KeyboardNavigation";
 
 const PAGE_SIZE = 96;
 type SortMode = "id-asc" | "id-desc" | "name-asc" | "name-desc" | "stack-desc";
@@ -68,12 +69,15 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
     const needle = query.trim().toLowerCase();
     const numeric = /^\d+$/.test(needle) ? Number(needle) : null;
     return items
-      .filter((item) => !needle || (numeric !== null
-        ? item.id === numeric
-        : item.name.toLowerCase().includes(needle) || item.key?.toLowerCase().includes(needle)))
-      .filter((item) => itemMatchesCategory(item, category))
-      .filter((item) => rarity === "all" || (item.rarity ?? "Common") === rarity)
-      .filter((item) => !compatibleOnly || acceptItem(item))
+      .filter((item) => {
+        const matchesQuery = !needle || (numeric !== null
+          ? item.id === numeric
+          : item.name.toLowerCase().includes(needle) || item.key?.toLowerCase().includes(needle));
+        return matchesQuery
+          && itemMatchesCategory(item, category)
+          && (rarity === "all" || (item.rarity ?? "Common") === rarity)
+          && (!compatibleOnly || acceptItem(item));
+      })
       .sort((left, right) => {
         if (sort === "id-desc") return right.id - left.id;
         if (sort === "name-asc") return left.name.localeCompare(right.name);
@@ -88,6 +92,7 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
   const visible = results.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const first = results.length ? page * PAGE_SIZE + 1 : 0;
   const last = Math.min((page + 1) * PAGE_SIZE, results.length);
+  const firstCompatibleIndex = visible.findIndex((item) => acceptItem(item));
 
   return (
     <main className="min-h-0 overflow-y-auto px-6 py-5">
@@ -110,10 +115,14 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
         <div className="mt-5 grid grid-cols-[190px_minmax(0,1fr)] gap-5">
           <aside className="self-start rounded-xl border border-white/[0.08] bg-white/[0.018] p-2">
             <p className="px-2.5 py-2 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/28">Categories</p>
-            <div className="space-y-0.5">
+            <RovingGroup label="Item categories" role="radiogroup" orientation="vertical" activateOnMove className="space-y-0.5">
               {itemCategories.map((entry) => (
                 <button
                   type="button"
+                  role="radio"
+                  data-roving-item=""
+                  aria-checked={category === entry.id}
+                  tabIndex={category === entry.id ? 0 : -1}
                   key={entry.id}
                   title={entry.description}
                   onClick={() => setCategory(entry.id)}
@@ -122,7 +131,7 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
                   <span>{entry.label}</span><span className="font-mono text-[9px] text-white/24">{counts[entry.id].toLocaleString()}</span>
                 </button>
               ))}
-            </div>
+            </RovingGroup>
           </aside>
 
           <section className="min-w-0">
@@ -147,14 +156,14 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
               </button>
             </div>
 
-            <div className="mt-3 flex items-center justify-between border-y border-white/[0.06] py-2 text-[10px] text-white/32">
+            <div aria-live="polite" className="mt-3 flex items-center justify-between border-y border-white/[0.06] py-2 text-[10px] text-white/32">
               <span>{results.length.toLocaleString()} {results.length === 1 ? "item" : "items"}</span>
               <span className="font-mono">Showing {first.toLocaleString()}–{last.toLocaleString()}</span>
             </div>
 
             {visible.length ? (
-              <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(154px,1fr))] gap-2">
-                {visible.map((item) => {
+              <KeyboardGrid label="Catalog items" className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(154px,1fr))] gap-2">
+                {visible.map((item, index) => {
                   const fits = acceptItem(item);
                   const group = primaryCategory(item);
                   const itemRarity = item.rarity ?? "Common";
@@ -171,7 +180,7 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
                             <p className={`truncate text-[9px] ${rarityTone[itemRarity] ?? "text-white/34"}`}>{itemRarity}</p>
                             <p className="mt-0.5 truncate text-[9px] text-white/25">{group.label} · max {item.maxStackSize ?? 9999}</p>
                           </div>
-                          <button type="button" disabled={!fits} onClick={() => onChoose(item)} aria-label={fits ? `Add ${item.name} to ${targetLabel}` : `${item.name} does not fit ${targetLabel}`} title={fits ? `Add to ${targetLabel}` : `Does not fit ${targetLabel}`} className="grid size-7 shrink-0 place-items-center rounded-lg border border-emerald-300/18 bg-emerald-300/[0.055] text-emerald-200/74 transition hover:bg-emerald-300/[0.12] disabled:border-white/[0.06] disabled:bg-transparent disabled:text-white/16">
+                          <button type="button" data-keyboard-grid-item="" tabIndex={fits && index === firstCompatibleIndex ? 0 : -1} disabled={!fits} onClick={() => onChoose(item)} aria-label={fits ? `Add ${item.name} to ${targetLabel}` : `${item.name} does not fit ${targetLabel}`} title={fits ? `Add to ${targetLabel}` : `Does not fit ${targetLabel}`} className="grid size-7 shrink-0 place-items-center rounded-lg border border-emerald-300/18 bg-emerald-300/[0.055] text-emerald-200/74 transition hover:bg-emerald-300/[0.12] disabled:border-white/[0.06] disabled:bg-transparent disabled:text-white/16">
                             <Plus className="size-3.5" />
                           </button>
                         </div>
@@ -179,7 +188,7 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
                     </ItemTooltip>
                   );
                 })}
-              </div>
+              </KeyboardGrid>
             ) : (
               <div className="mt-3 grid min-h-64 place-items-center rounded-xl border border-dashed border-white/[0.08] bg-black/[0.08] text-center">
                 <div><SquaresFour className="mx-auto size-7 text-white/18" /><p className="mt-3 text-sm text-white/48">No items match these filters</p><button type="button" onClick={() => { setQuery(""); setCategory("all"); setRarity("all"); setCompatibleOnly(false); }} className="mt-2 text-[11px] font-medium text-emerald-300/70">Reset browser</button></div>
@@ -188,9 +197,9 @@ export function ItemBrowser({ targetLabel, acceptItem, onChoose, onBack }: Props
 
             {pageCount > 1 && (
               <div className="mt-4 flex items-center justify-center gap-3 border-t border-white/[0.06] pt-4">
-                <button type="button" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="grid size-8 place-items-center rounded-lg border border-white/[0.08] text-white/46 hover:bg-white/[0.04] disabled:text-white/14"><CaretLeft className="size-4" /></button>
+                <button type="button" aria-label="Previous catalog page" disabled={page === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="grid size-8 place-items-center rounded-lg border border-white/[0.08] text-white/46 hover:bg-white/[0.04] disabled:text-white/14"><CaretLeft className="size-4" /></button>
                 <span className="min-w-28 text-center font-mono text-[10px] text-white/34">Page {page + 1} of {pageCount}</span>
-                <button type="button" disabled={page + 1 >= pageCount} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="grid size-8 place-items-center rounded-lg border border-white/[0.08] text-white/46 hover:bg-white/[0.04] disabled:text-white/14"><CaretRight className="size-4" /></button>
+                <button type="button" aria-label="Next catalog page" disabled={page + 1 >= pageCount} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="grid size-8 place-items-center rounded-lg border border-white/[0.08] text-white/46 hover:bg-white/[0.04] disabled:text-white/14"><CaretRight className="size-4" /></button>
               </div>
             )}
           </section>

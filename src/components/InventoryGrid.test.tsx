@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { demoPlayer } from "../lib/demo";
 import { InventoryGrid, ItemSlotButton } from "./InventoryGrid";
@@ -22,5 +22,23 @@ describe("InventoryGrid", () => {
     render(<ItemSlotButton item={demoPlayer.inventory[1]} selected={false} onSelect={vi.fn()} />);
 
     expect(iconWrapper(screen.getByRole("button", { name: /^Slot 2:/ })).classList.contains("-translate-y-1")).toBe(false);
+  });
+
+  it("uses one tab stop per slot group and supports arrow navigation", () => {
+    const onSelect = vi.fn();
+    render(<InventoryGrid inventory={demoPlayer.inventory} selectedSlot={1} onSelect={onSelect} />);
+
+    const hotbar = screen.getByRole("group", { name: /Hotbar slots/ });
+    const backpack = screen.getByRole("group", { name: /Backpack slots/ });
+    const hotbarSlots = Array.from(hotbar.querySelectorAll<HTMLButtonElement>("button"));
+    const backpackSlots = Array.from(backpack.querySelectorAll<HTMLButtonElement>("button"));
+    expect(hotbarSlots.filter((slot) => slot.tabIndex === 0)).toHaveLength(1);
+    expect(backpackSlots.filter((slot) => slot.tabIndex === 0)).toHaveLength(1);
+
+    hotbarSlots[1].focus();
+    fireEvent.keyDown(hotbarSlots[1], { key: "ArrowRight" });
+    expect(document.activeElement).toBe(hotbarSlots[2]);
+    fireEvent.keyDown(hotbarSlots[2], { key: "Enter" });
+    expect(onSelect).toHaveBeenCalledWith(2);
   });
 });

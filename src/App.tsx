@@ -28,6 +28,7 @@ import { ItemBrowser } from "./components/ItemBrowser";
 import { HeaderUpdateButton } from "./components/HeaderUpdateButton";
 import { ItemInspector } from "./components/ItemInspector";
 import { ItemSearch } from "./components/ItemSearch";
+import { RovingGroup } from "./components/KeyboardNavigation";
 import { JourneyPanel } from "./components/JourneyPanel";
 import { LoadoutsPanel } from "./components/LoadoutsPanel";
 import { LoadingState } from "./components/LoadingState";
@@ -144,19 +145,20 @@ function SideRail({ view, onView }: { view: View; onView: (view: View) => void }
   const utilityButton = (id: View, label: string, Icon: typeof ClockCounterClockwise) => {
     const active = view === id;
     return (
-      <button type="button" onClick={() => onView(id)} className={`group flex w-full items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-left text-[12px] active:scale-[0.98] ${active ? "border-emerald-400 bg-white/[0.075] font-medium text-white" : "border-transparent bg-transparent text-white/42 hover:bg-white/[0.04] hover:text-white/70"}`}>
+      <button type="button" data-roving-item="" tabIndex={active ? 0 : -1} aria-current={active ? "page" : undefined} onClick={() => onView(id)} className={`group flex w-full items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-left text-[12px] active:scale-[0.98] ${active ? "border-emerald-400 bg-white/[0.075] font-medium text-white" : "border-transparent bg-transparent text-white/42 hover:bg-white/[0.04] hover:text-white/70"}`}>
         <Icon weight={active ? "fill" : "regular"} className={`size-[17px] ${active ? "text-emerald-300" : "text-white/34 group-hover:text-white/60"}`} />{label}
       </button>
     );
   };
   return (
-    <nav aria-label="Character sections" className="flex min-h-0 flex-col border-r border-white/[0.08] bg-[#111513]/78 p-3">
+    <nav aria-label="Character sections" className="min-h-0 border-r border-white/[0.08] bg-[#111513]/78 p-3">
+      <RovingGroup label="Editor sections" orientation="vertical" activateOnMove className="flex h-full min-h-0 flex-col">
       <div className="space-y-1">
         {navigation.map((item) => {
           const Icon = item.icon;
           const active = view === item.id;
           return (
-            <button type="button" key={item.id} onClick={() => onView(item.id)} className={`group flex w-full items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-left text-[12px] font-medium active:scale-[0.98] ${active ? "border-emerald-400 bg-white/[0.075] text-white" : "border-transparent bg-transparent text-white/48 hover:bg-white/[0.04] hover:text-white/76"}`}>
+            <button type="button" data-roving-item="" tabIndex={active ? 0 : -1} aria-current={active ? "page" : undefined} key={item.id} onClick={() => onView(item.id)} className={`group flex w-full items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-left text-[12px] font-medium active:scale-[0.98] ${active ? "border-emerald-400 bg-white/[0.075] text-white" : "border-transparent bg-transparent text-white/48 hover:bg-white/[0.04] hover:text-white/76"}`}>
               <Icon weight={active ? "fill" : "regular"} className={`size-[17px] ${active ? "text-emerald-300" : "text-white/34 group-hover:text-white/60"}`} />
               <span className="flex-1">{item.label}</span>
               {item.phase && <span className="font-mono text-[8px] uppercase tracking-[0.08em] text-white/22">{item.phase}</span>}
@@ -168,6 +170,7 @@ function SideRail({ view, onView }: { view: View; onView: (view: View) => void }
         {utilityButton("backups", "Backups", ClockCounterClockwise)}
         {utilityButton("settings", "Settings", GearSix)}
       </div>
+      </RovingGroup>
     </nav>
   );
 }
@@ -220,7 +223,7 @@ export default function App() {
   const [editor, dispatch] = useReducer(editorReducer, editableDocument(player ?? demoPlayer), initialEditorState);
 
   const editorDocument = useMemo<EditableDocument>(() => editableDocument(editor), [editor]);
-  const currentPlayer = player ? { ...player, ...editorDocument } : null;
+  const currentPlayer = useMemo(() => player ? { ...player, ...editorDocument } : null, [editorDocument, player]);
   const activeVersion = currentPlayer?.version ?? 325;
   const selectedItem = itemAt(editorDocument, selected);
 
@@ -327,7 +330,9 @@ export default function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+      const target = event.target as HTMLElement | null;
+      const editingText = target?.matches("input, textarea, select, [contenteditable='true']") ?? false;
+      if (!editingText && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
         event.preventDefault();
         dispatch({ type: event.shiftKey ? "redo" : "undo" });
       }
@@ -481,6 +486,8 @@ export default function App() {
 
   return (
     <div className="flex h-[100dvh] overflow-hidden flex-col bg-[#0e1211] text-white selection:bg-emerald-400/25">
+      <a href="#main-content" className="skip-link" onClick={() => requestAnimationFrame(() => document.getElementById("main-content")?.focus())} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); document.getElementById("main-content")?.focus(); } }}>Skip to editor content</a>
+      <span className="sr-only" aria-live="polite">{`${navigation.find((item) => item.id === view)?.label ?? view} view`}</span>
       <header className="flex h-16 shrink-0 items-center gap-4 border-b border-white/[0.08] bg-[#101413]/95 px-4">
         <div className="flex w-[192px] items-center gap-2.5"><span aria-hidden="true" className="logo-mark"><span /><span /><span /></span><span className="text-[15px] font-semibold tracking-[-0.035em] text-white/92">PlrForge</span></div>
         {currentPlayer ? <><div className="flex min-w-0 items-center gap-3 border-l border-white/10 pl-4"><div className="min-w-0"><p className="truncate text-[12px] font-semibold text-white/84">{currentPlayer.character.name}</p><p className="font-mono text-[9px] text-white/30">File version {currentPlayer.version}</p></div><span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.055] px-2 py-1 text-[10px] text-emerald-200/75 xl:flex"><span className="size-1.5 rounded-full bg-emerald-400" />Safe to edit</span></div><div className="ml-auto flex items-center gap-1.5"><AssetStatusButton /><HeaderUpdateButton status={updateStatus} checking={checkingUpdates} onCheck={runUpdateCheck} /><button type="button" onClick={() => dispatch({ type: "undo" })} disabled={!editor.past.length} aria-label="Undo" className="toolbar-button"><ArrowCounterClockwise className="size-4" /></button><button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!editor.future.length} aria-label="Redo" className="toolbar-button"><ArrowUUpRight className="size-4" /></button>{desktop && <button type="button" onClick={openPlayer} className="toolbar-button ml-1 gap-2 px-3"><FolderOpen className="size-4" /><span className="hidden xl:inline">Open</span></button>}<button type="button" onClick={save} disabled={saving || editor.changes.length === 0} className="ml-2 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500 px-3.5 text-[12px] font-semibold text-[#07110d] transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/[0.07] disabled:text-white/26">{saving ? <span className="size-3.5 animate-pulse rounded bg-current/50" /> : <Check weight="bold" className="size-4" />}{saving ? "Verifying" : "Save changes"}</button></div></> : <><p className="text-xs text-white/30">No player open</p><div className="ml-auto flex items-center gap-1.5"><AssetStatusButton /><HeaderUpdateButton status={updateStatus} checking={checkingUpdates} onCheck={runUpdateCheck} /></div></>}
@@ -495,10 +502,11 @@ export default function App() {
         />
       )}
 
-      {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "error" ? <main className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} refreshing={refreshingPlayers} onRefresh={() => void refreshPlayers()} onOpen={openPlayer} onLoad={loadPath} /> : (
+      {loadState === "discovering" || loadState === "loading" ? <LoadingState /> : loadState === "error" ? <main id="main-content" tabIndex={-1} className="grid flex-1 place-items-center p-8"><div className="max-w-lg rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-6"><Warning className="size-6 text-rose-300" /><h1 className="mt-4 text-lg font-semibold">Player could not be opened</h1><p className="mt-2 text-sm leading-6 text-white/46">{error}</p><button type="button" onClick={() => setLoadState("empty")} className="mt-5 text-sm font-medium text-emerald-300">Back to player picker</button></div></main> : loadState === "empty" || !currentPlayer ? <EmptyState players={players} refreshing={refreshingPlayers} onRefresh={() => void refreshPlayers()} onOpen={openPlayer} onLoad={loadPath} /> : (
         <div className="grid min-h-0 flex-1 grid-cols-[208px_minmax(0,1fr)]">
           <SideRail view={view} onView={navigate} />
           <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto]">
+            <div id="main-content" tabIndex={-1} className="grid min-h-0 overflow-hidden">
             {isItemView ? (
               <div className="grid min-h-0 grid-cols-[minmax(700px,1fr)_300px] overflow-hidden">
                 <main key={view} className="min-h-0 overflow-y-auto px-6 py-5">
@@ -518,10 +526,11 @@ export default function App() {
               : view === "spawns" ? <SpawnPointsPanel points={editor.spawnPoints} onChange={(spawnPoints, description, location) => applySystemChange({ spawnPoints }, description, location)} />
               : view === "backups" ? <BackupsPanel playerPath={currentPlayer.path} playerName={currentPlayer.character.name} refreshKey={currentPlayer.sourceHash} hasUnsavedChanges={editor.changes.length > 0} onRestored={restored} />
               : <SettingsPanel version={version} updateStatus={updateStatus} checkingUpdates={checkingUpdates} automaticUpdateChecks={automaticUpdateChecks} onAutomaticUpdateChecks={changeAutomaticUpdateChecks} onCheckForUpdates={runUpdateCheck} />}
+            </div>
 
             <footer className="border-t border-white/[0.08] bg-[#111513]">
-              {(error || message || clipboard) && <div className={`flex items-start gap-2 border-b border-white/[0.06] px-4 py-2 text-[11px] ${error ? "text-rose-300/84" : "text-white/42"}`}>{error ? <Warning className="mt-px size-3.5 shrink-0" /> : <Check className="mt-px size-3.5 shrink-0 text-emerald-300/70" />}<span className="truncate">{error ?? (clipboard ? `${clipboard.mode === "move" ? "Moving" : "Copied"} ${itemName(clipboard.item.itemId)} from ${locationLabel(clipboard.source)}. Select a destination and paste.` : message)}</span></div>}
-              <div className="grid min-h-[58px] grid-cols-[208px_minmax(0,1fr)]"><div className={`flex items-center gap-2 border-r border-white/[0.08] px-4 text-[11px] font-medium ${editor.changes.length ? "text-amber-300/82" : "text-white/34"}`}><Stack className="size-4" />{editor.changes.length ? `${editor.changes.length} unsaved ${editor.changes.length === 1 ? "change" : "changes"}` : "No unsaved changes"}</div><div className="flex min-w-0 items-center gap-5 overflow-hidden px-4">{editor.changes.length ? editor.changes.slice(-3).reverse().map((change) => <div key={change.id} className="min-w-0 border-l border-white/10 pl-3"><p className="truncate text-[11px] text-white/52">{change.description}</p><p className="mt-0.5 font-mono text-[9px] text-white/22">{change.location}</p></div>) : <p className="text-[11px] text-white/26">Every edit appears here and can be undone before save.</p>}</div></div>
+              {(error || message || clipboard) && <div role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"} className={`flex items-start gap-2 border-b border-white/[0.06] px-4 py-2 text-[11px] ${error ? "text-rose-300/84" : "text-white/42"}`}>{error ? <Warning className="mt-px size-3.5 shrink-0" /> : <Check className="mt-px size-3.5 shrink-0 text-emerald-300/70" />}<span className="truncate">{error ?? (clipboard ? `${clipboard.mode === "move" ? "Moving" : "Copied"} ${itemName(clipboard.item.itemId)} from ${locationLabel(clipboard.source)}. Select a destination and paste.` : message)}</span></div>}
+              <div className="grid min-h-[58px] grid-cols-[208px_minmax(0,1fr)]"><div aria-live="polite" className={`flex items-center gap-2 border-r border-white/[0.08] px-4 text-[11px] font-medium ${editor.changes.length ? "text-amber-300/82" : "text-white/34"}`}><Stack className="size-4" />{editor.changes.length ? `${editor.changes.length} unsaved ${editor.changes.length === 1 ? "change" : "changes"}` : "No unsaved changes"}</div><div className="flex min-w-0 items-center gap-5 overflow-hidden px-4">{editor.changes.length ? editor.changes.slice(-3).reverse().map((change) => <div key={change.id} className="min-w-0 border-l border-white/10 pl-3"><p className="truncate text-[11px] text-white/52">{change.description}</p><p className="mt-0.5 font-mono text-[9px] text-white/22">{change.location}</p></div>) : <p className="text-[11px] text-white/26">Every edit appears here and can be undone before save.</p>}</div></div>
             </footer>
           </div>
         </div>

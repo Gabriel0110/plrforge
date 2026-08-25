@@ -11,7 +11,7 @@ type Props = {
 
 export function EmptyState({ players, refreshing, onRefresh, onOpen, onLoad }: Props) {
   return (
-    <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_340px] overflow-hidden">
+    <main id="main-content" tabIndex={-1} className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_340px] overflow-hidden">
       <section className="grid place-items-center p-10">
         <div className="w-full max-w-[560px]">
           <div className="mb-7 flex size-12 items-center justify-center rounded-2xl border border-emerald-300/22 bg-emerald-300/[0.07] text-emerald-200"><FileArrowUp className="size-5" /></div>

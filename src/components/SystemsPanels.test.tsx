@@ -26,7 +26,7 @@ describe("remaining character-system panels", () => {
   it("searches for and adds a saved buff with an editable duration", () => {
     render(<EffectsHarness />);
     fireEvent.change(screen.getByLabelText("Find a buff by name or ID"), { target: { value: "Ironskin" } });
-    fireEvent.click(screen.getByRole("button", { name: /Ironskin/i }));
+    fireEvent.click(screen.getByRole("option", { name: /Ironskin/i }));
     expect(screen.getByLabelText("Ironskin duration ticks")).toBeTruthy();
     expect((screen.getByLabelText("Ironskin duration ticks") as HTMLInputElement).value).toBe("36000");
   });

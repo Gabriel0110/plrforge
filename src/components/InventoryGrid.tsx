@@ -3,6 +3,7 @@ import { itemName } from "../data/catalog";
 import type { InventoryItem } from "../types";
 import { ItemGlyph } from "./ItemGlyph";
 import { ItemTooltip } from "./ItemTooltip";
+import { KeyboardGrid } from "./KeyboardNavigation";
 
 type Props = {
   inventory: InventoryItem[];
@@ -18,6 +19,8 @@ export function ItemSlotButton({
   showIndex = true,
   hotbar = false,
   raisedIcon = false,
+  keyboardGridItem = false,
+  tabIndex,
 }: {
   item: InventoryItem;
   selected: boolean;
@@ -26,6 +29,8 @@ export function ItemSlotButton({
   showIndex?: boolean;
   hotbar?: boolean;
   raisedIcon?: boolean;
+  keyboardGridItem?: boolean;
+  tabIndex?: number;
 }) {
   const name = itemName(item.itemId);
   return (
@@ -35,7 +40,15 @@ export function ItemSlotButton({
         type="button"
         aria-label={`${label ?? `Slot ${item.slot + 1}`}: ${name}${item.stack > 1 ? `, stack ${item.stack}` : ""}`}
         aria-pressed={selected}
+        data-keyboard-grid-item={keyboardGridItem ? "" : undefined}
+        tabIndex={keyboardGridItem ? tabIndex ?? (selected ? 0 : -1) : tabIndex}
         onClick={onSelect}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onSelect();
+          }
+        }}
         className={`group relative aspect-square min-w-0 overflow-hidden rounded-lg border p-1 text-left transition duration-200 ease-out active:scale-[0.98] ${
           selected
             ? "border-emerald-400/80 bg-emerald-400/10 shadow-[inset_0_0_0_1px_rgba(52,211,153,.22)]"
@@ -79,22 +92,25 @@ function SlotSection({
   onSelect: (slot: number) => void;
   compact?: boolean;
 }) {
+  const hasSelectedSlot = items.some((item) => item.slot === selectedSlot);
   return (
     <section aria-labelledby={`${title}-title`}>
       <div className="mb-2.5 flex items-baseline justify-between gap-4">
         <h2 id={`${title}-title`} className="text-[13px] font-semibold text-white/88">{title}</h2>
         <p className="text-[11px] text-white/38">{detail}</p>
       </div>
-      <div className={`grid gap-1.5 ${compact ? "grid-cols-4 max-w-[254px]" : "grid-cols-10 max-w-[694px]"}`}>
-        {items.map((item) => (
-          <ItemSlotButton key={item.slot} raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
+      <KeyboardGrid label={`${title} slots`} columns={compact ? 4 : 10} className={`grid gap-1.5 ${compact ? "grid-cols-4 max-w-[254px]" : "grid-cols-10 max-w-[694px]"}`}>
+        {items.map((item, index) => (
+          <ItemSlotButton key={item.slot} keyboardGridItem tabIndex={item.slot === selectedSlot || (!hasSelectedSlot && index === 0) ? 0 : -1} raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
         ))}
-      </div>
+      </KeyboardGrid>
     </section>
   );
 }
 
 export function InventoryGrid({ inventory, selectedSlot, onSelect }: Props) {
+  const hotbarSelected = selectedSlot !== null && selectedSlot < 10;
+  const backpackSelected = selectedSlot !== null && selectedSlot >= 10 && selectedSlot < 50;
   return (
     <div className="space-y-5">
       <section aria-labelledby="main-inventory-title">
@@ -108,20 +124,20 @@ export function InventoryGrid({ inventory, selectedSlot, onSelect }: Props) {
             <span className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-emerald-200/58"><Lightning weight="fill" className="size-3" />Hotbar</span>
             <span className="text-[9px] text-white/26">Quick-access row in Terraria</span>
           </div>
-          <div className="grid grid-cols-10 gap-1.5">
-            {inventory.slice(0, 10).map((item) => (
-              <ItemSlotButton key={item.slot} hotbar raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
+          <KeyboardGrid label="Hotbar slots" columns={10} className="grid grid-cols-10 gap-1.5">
+            {inventory.slice(0, 10).map((item, index) => (
+              <ItemSlotButton key={item.slot} keyboardGridItem tabIndex={item.slot === selectedSlot || (!hotbarSelected && index === 0) ? 0 : -1} hotbar raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
             ))}
-          </div>
+          </KeyboardGrid>
         </div>
 
         <div className="mt-3 max-w-[706px] rounded-xl border border-white/[0.055] bg-black/[0.08] p-1.5">
           <div className="mb-1.5 flex items-center gap-1.5 px-1.5 pt-0.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-white/30"><Backpack className="size-3" />Backpack</div>
-          <div className="grid grid-cols-10 gap-1.5">
-            {inventory.slice(10, 50).map((item) => (
-              <ItemSlotButton key={item.slot} raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
+          <KeyboardGrid label="Backpack slots" columns={10} className="grid grid-cols-10 gap-1.5">
+            {inventory.slice(10, 50).map((item, index) => (
+              <ItemSlotButton key={item.slot} keyboardGridItem tabIndex={item.slot === selectedSlot || (!backpackSelected && index === 0) ? 0 : -1} raisedIcon item={item} selected={item.slot === selectedSlot} onSelect={() => onSelect(item.slot)} />
             ))}
-          </div>
+          </KeyboardGrid>
         </div>
       </section>
       <div className="grid grid-cols-2 gap-8 border-t border-white/[0.08] pt-4">

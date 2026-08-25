@@ -43,6 +43,7 @@ Additional quality-of-life features include:
 - Automatic timestamped backups before every successful save
 - Backup browsing and guarded restore inside the app
 - Manual and opt-in launch-time update checks through GitHub Releases
+- Keyboard-efficient slot grids, semantic controls, visible focus, reduced-motion support, and skip navigation
 - Graceful text fallbacks when Terraria assets are unavailable
 
 ## Save safety

@@ -18,4 +18,13 @@ describe("ItemBrowser", () => {
     fireEvent.change(screen.getByLabelText("Search item catalog"), { target: { value: "Iron Pickaxe" } });
     expect(screen.getByLabelText("Iron Pickaxe does not fit Head armor").hasAttribute("disabled")).toBe(true);
   });
+
+  it("moves and activates category radio controls with arrow keys", () => {
+    render(<ItemBrowser targetLabel="Inventory 1" acceptItem={() => true} onChoose={vi.fn()} />);
+    const categories = screen.getAllByRole("radio");
+    categories[0].focus();
+    fireEvent.keyDown(categories[0], { key: "ArrowDown" });
+    expect(document.activeElement).toBe(categories[1]);
+    expect(categories[1].getAttribute("aria-checked")).toBe("true");
+  });
 });
