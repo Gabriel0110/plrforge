@@ -1,6 +1,7 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
+import packageManifest from "../../package.json";
 import type { DiscoveredPlayer, PlayerCompatibility, PlayerDocument, SaveReceipt } from "../types";
 
 declare global {
@@ -10,6 +11,7 @@ declare global {
 }
 
 export const isDesktop = () => Boolean(window.__TAURI_INTERNALS__);
+export const bundledVersion = packageManifest.version;
 
 export type GameAssetStatus = {
   state: "preparing" | "ready" | "missing" | "error" | "preview";
@@ -215,7 +217,7 @@ export function checkForUpdates(): Promise<UpdateStatus> {
   if (!isDesktop()) {
     return Promise.resolve({
       state: "preview",
-      currentVersion: "0.1.1",
+      currentVersion: bundledVersion,
       latestVersion: null,
       releaseName: null,
       releaseUrl: null,
@@ -235,5 +237,5 @@ export function openReleasePage(url: string): Promise<void> {
 }
 
 export function appVersion(): Promise<string> {
-  return isDesktop() ? getVersion() : Promise.resolve("0.1.1");
+  return isDesktop() ? getVersion() : Promise.resolve(bundledVersion);
 }

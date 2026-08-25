@@ -52,6 +52,7 @@ import {
 } from "./lib/editor";
 import {
   appVersion,
+  bundledVersion,
   checkForUpdates,
   choosePlayerFile,
   discoverPlayers,
@@ -214,7 +215,7 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(desktop ? null : "Browser preview uses a disposable demo character.");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [version, setVersion] = useState("0.1.1");
+  const [version, setVersion] = useState(bundledVersion);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [showUpdateNotice, setShowUpdateNotice] = useState(false);
@@ -489,7 +490,7 @@ export default function App() {
       <a href="#main-content" className="skip-link" onClick={() => requestAnimationFrame(() => document.getElementById("main-content")?.focus())} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); document.getElementById("main-content")?.focus(); } }}>Skip to editor content</a>
       <span className="sr-only" aria-live="polite">{`${navigation.find((item) => item.id === view)?.label ?? view} view`}</span>
       <header className="flex h-16 shrink-0 items-center gap-4 border-b border-white/[0.08] bg-[#101413]/95 px-4">
-        <div className="flex w-[192px] items-center gap-2.5"><span aria-hidden="true" className="logo-mark"><span /><span /><span /></span><span className="text-[15px] font-semibold tracking-[-0.035em] text-white/92">PlrForge</span></div>
+        <div className="flex w-[192px] items-center gap-2.5"><span aria-hidden="true" className="logo-mark"><span /><span /><span /></span><div className="flex flex-col"><span className="text-[15px] font-semibold leading-none tracking-[-0.035em] text-white/92">PlrForge</span><span className="mt-1 font-mono text-[8px] leading-none tracking-[0.08em] text-white/30">v{version}</span></div></div>
         {currentPlayer ? <><div className="flex min-w-0 items-center gap-3 border-l border-white/10 pl-4"><div className="min-w-0"><p className="truncate text-[12px] font-semibold text-white/84">{currentPlayer.character.name}</p><p className="font-mono text-[9px] text-white/30">File version {currentPlayer.version}</p></div><span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.055] px-2 py-1 text-[10px] text-emerald-200/75 xl:flex"><span className="size-1.5 rounded-full bg-emerald-400" />Safe to edit</span></div><div className="ml-auto flex items-center gap-1.5"><AssetStatusButton /><HeaderUpdateButton status={updateStatus} checking={checkingUpdates} onCheck={runUpdateCheck} /><button type="button" onClick={() => dispatch({ type: "undo" })} disabled={!editor.past.length} aria-label="Undo" className="toolbar-button"><ArrowCounterClockwise className="size-4" /></button><button type="button" onClick={() => dispatch({ type: "redo" })} disabled={!editor.future.length} aria-label="Redo" className="toolbar-button"><ArrowUUpRight className="size-4" /></button>{desktop && <button type="button" onClick={openPlayer} className="toolbar-button ml-1 gap-2 px-3"><FolderOpen className="size-4" /><span className="hidden xl:inline">Open</span></button>}<button type="button" onClick={save} disabled={saving || editor.changes.length === 0} className="ml-2 inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500 px-3.5 text-[12px] font-semibold text-[#07110d] transition hover:bg-emerald-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-white/[0.07] disabled:text-white/26">{saving ? <span className="size-3.5 animate-pulse rounded bg-current/50" /> : <Check weight="bold" className="size-4" />}{saving ? "Verifying" : "Save changes"}</button></div></> : <><p className="text-xs text-white/30">No player open</p><div className="ml-auto flex items-center gap-1.5"><AssetStatusButton /><HeaderUpdateButton status={updateStatus} checking={checkingUpdates} onCheck={runUpdateCheck} /></div></>}
       </header>
 

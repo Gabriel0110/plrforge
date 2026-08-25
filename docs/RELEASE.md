@@ -51,13 +51,13 @@
 - The workflow runs the complete quality gate before creating `v<version>` from the selected commit.
 - Confirm the draft contains a universal macOS `.app.tar.gz` and `.dmg`, a Windows `.msi` and NSIS `.exe`, `SHA256SUMS.txt`, `COMPATIBILITY.md`, and `RECOVERY.md`.
 - Download each bundle, verify it against `SHA256SUMS.txt`, and complete the macOS and Windows smoke tests above.
-- Keep the release as a draft until review is complete. If published for testers, keep it marked as a prerelease; the app's stable update check intentionally ignores it.
+- Keep the release as a draft until review is complete. If published for testers, keep it marked as a prerelease; the app can discover public previews but the release page and notes must identify their unsigned status clearly.
 - Do not enable Tauri updater metadata or `.sig` generation for unsigned previews.
 
 ## Stable public release
 
 - Keep `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` on the same SemVer and tag it as `v<version>`.
-- Build distributed binaries with `PLRFORGE_GITHUB_REPOSITORY=owner/repository`; the GitHub Actions build does this from `${{ github.repository }}`.
+- Official builds use `Gabriel0110/plrforge` as the update feed by default. Forks can override it with `PLRFORGE_GITHUB_REPOSITORY=owner/repository`; GitHub Actions supplies `${{ github.repository }}` automatically.
 - Publish a non-draft, non-prerelease GitHub Release so the stable update check can discover it.
 - Promote only identity-signed/notarized artifacts that have passed the preview checklist; do not relabel unsigned preview binaries as stable.
 - Publish SHA-256 checksums, the compatibility matrix, and recovery instructions.

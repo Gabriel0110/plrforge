@@ -3,6 +3,7 @@ use semver::Version;
 use serde::{Deserialize, Serialize};
 
 const RELEASE_REPOSITORY: Option<&str> = option_env!("PLRFORGE_GITHUB_REPOSITORY");
+const DEFAULT_RELEASE_REPOSITORY: &str = "Gabriel0110/plrforge";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +22,8 @@ struct GitHubRelease {
     tag_name: String,
     name: Option<String>,
     published_at: Option<String>,
+    #[serde(default)]
+    draft: bool,
 }
 
 pub async fn check(current_version: &str) -> UpdateStatus {
@@ -33,7 +36,7 @@ pub async fn check(current_version: &str) -> UpdateStatus {
         );
     };
 
-    let endpoint = format!("https://api.github.com/repos/{repository}/releases/latest");
+    let endpoint = format!("https://api.github.com/repos/{repository}/releases?per_page=20");
     let response = match reqwest::Client::new()
         .get(endpoint)
         .header(
@@ -71,8 +74,8 @@ pub async fn check(current_version: &str) -> UpdateStatus {
             &format!("GitHub Releases returned HTTP {}.", response.status()),
         );
     }
-    let release = match response.json::<GitHubRelease>().await {
-        Ok(release) => release,
+    let releases = match response.json::<Vec<GitHubRelease>>().await {
+        Ok(releases) => releases,
         Err(error) => {
             return status(
                 "error",
@@ -82,7 +85,28 @@ pub async fn check(current_version: &str) -> UpdateStatus {
             );
         }
     };
+    let Some(release) = newest_public_release(releases) else {
+        return status(
+            "error",
+            current_version,
+            None,
+            "No public semantic-versioned GitHub release was found for this update feed.",
+        );
+    };
     compare_release(current_version, repository, release)
+}
+
+fn newest_public_release(releases: Vec<GitHubRelease>) -> Option<GitHubRelease> {
+    releases
+        .into_iter()
+        .filter(|release| !release.draft)
+        .filter_map(|release| {
+            Version::parse(release.tag_name.trim_start_matches('v'))
+                .ok()
+                .map(|version| (version, release))
+        })
+        .max_by(|(left, _), (right, _)| left.cmp(right))
+        .map(|(_, release)| release)
 }
 
 fn compare_release(
@@ -150,7 +174,8 @@ fn status(state: &str, current: &str, latest: Option<&str>, message: &str) -> Up
 }
 
 pub fn configured_repository() -> Option<&'static str> {
-    RELEASE_REPOSITORY.filter(|repository| valid_repository(repository))
+    let repository = RELEASE_REPOSITORY.unwrap_or(DEFAULT_RELEASE_REPOSITORY);
+    valid_repository(repository).then_some(repository)
 }
 
 pub fn release_url_allowed(url: &str) -> bool {
@@ -187,6 +212,7 @@ mod tests {
                 tag_name: "v0.2.0".into(),
                 name: Some("Phase 4".into()),
                 published_at: Some("2026-08-23T12:00:00Z".into()),
+                draft: false,
             },
         );
         assert_eq!(update.state, "updateAvailable");
@@ -203,5 +229,37 @@ mod tests {
         assert!(!valid_repository("https://example.com/repo"));
         assert!(!valid_repository("example/repo/extra"));
         assert!(!valid_repository("example/repo?redirect=bad"));
+    }
+
+    #[test]
+    fn official_repository_is_available_without_a_build_override() {
+        assert_eq!(configured_repository(), Some("Gabriel0110/plrforge"));
+    }
+
+    #[test]
+    fn newest_public_release_includes_prerelease_tags_but_excludes_drafts() {
+        let release = newest_public_release(vec![
+            GitHubRelease {
+                tag_name: "v0.2.0".into(),
+                name: Some("Preview".into()),
+                published_at: None,
+                draft: false,
+            },
+            GitHubRelease {
+                tag_name: "v0.3.0".into(),
+                name: Some("Unpublished".into()),
+                published_at: None,
+                draft: true,
+            },
+            GitHubRelease {
+                tag_name: "not-semver".into(),
+                name: None,
+                published_at: None,
+                draft: false,
+            },
+        ])
+        .expect("a public release");
+
+        assert_eq!(release.tag_name, "v0.2.0");
     }
 }
