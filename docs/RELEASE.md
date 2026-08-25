@@ -28,11 +28,11 @@
 ## macOS
 
 - Build universal Apple Silicon + Intel app and DMG artifacts.
-- For unsigned previews, keep Tauri's ad-hoc `signingIdentity: "-"`; confirm macOS still requires explicit user approval in Privacy & Security.
-- Configure Developer ID Application signing.
-- Notarize and staple the `.app`/`.dmg`.
+- Ordinary CI builds use Tauri's ad-hoc `signingIdentity: "-"`; they are test artifacts, not public releases.
+- Release builds import the protected `Developer ID Application: JOHN GABRIEL TOMBERLIN (WSB2QDY3P7)` identity from GitHub Actions secrets.
+- Submit the signed DMG with ASC, wait for Apple to accept it, and staple the ticket to both the `.app` and `.dmg` before upload.
 - Validate preview bundles with `node script/macos-artifact.mjs <PlrForge.app> --mode preview --expect-arch arm64,x86_64`.
-- Validate stable bundles with `node script/macos-artifact.mjs <PlrForge.app> --mode distribution --expect-arch arm64,x86_64 --dmg <PlrForge.dmg>`; this rejects ad-hoc signatures and requires Gatekeeper acceptance plus stapled notarization tickets.
+- Validate every public release with `node script/macos-artifact.mjs <PlrForge.app> --mode distribution --expect-arch arm64,x86_64 --dmg <PlrForge.dmg>`; this rejects ad-hoc signatures and requires Gatekeeper acceptance plus stapled notarization tickets.
 - Test first launch, file picker permissions, backup access, and Steam Cloud warning.
 - Test Steam and nonstandard game-asset paths on both a clean and populated icon cache.
 
@@ -48,18 +48,18 @@
 
 - Keep `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` on the same SemVer.
 - Run **Release preview** manually and enter that exact version without a leading `v`.
-- The workflow runs the complete quality gate before creating `v<version>` from the selected commit.
+- The workflow runs the complete quality gate, creates a draft `v<version>`, signs and notarizes macOS, and uploads artifacts only after platform validation passes.
 - Confirm the draft contains a universal macOS `.app.tar.gz` and `.dmg`, a Windows `.msi` and NSIS `.exe`, `SHA256SUMS.txt`, `COMPATIBILITY.md`, and `RECOVERY.md`.
 - Download each bundle, verify it against `SHA256SUMS.txt`, and complete the macOS and Windows smoke tests above.
-- Keep the release as a draft until review is complete. If published for testers, keep it marked as a prerelease; the app can discover public previews but the release page and notes must identify their unsigned status clearly.
-- Do not enable Tauri updater metadata or `.sig` generation for unsigned previews.
+- Keep the release as a draft until review is complete. If published for testers, keep it marked as a prerelease; the release page and notes must state that macOS is Developer ID signed and notarized while Windows remains unsigned.
+- Do not enable Tauri updater metadata or `.sig` generation until both public platforms have a complete signing path.
 
 ## Stable public release
 
 - Keep `package.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` on the same SemVer and tag it as `v<version>`.
 - Official builds use `Gabriel0110/plrforge` as the update feed by default. Forks can override it with `PLRFORGE_GITHUB_REPOSITORY=owner/repository`; GitHub Actions supplies `${{ github.repository }}` automatically.
 - Publish a non-draft, non-prerelease GitHub Release so the stable update check can discover it.
-- Promote only identity-signed/notarized artifacts that have passed the preview checklist; do not relabel unsigned preview binaries as stable.
+- Promote only the validated Developer ID signed/notarized macOS artifacts produced by the release workflow. Do not replace them after validation.
 - Publish SHA-256 checksums, the compatibility matrix, and recovery instructions.
 - Link recovery instructions prominently.
 - Credit TEdit item metadata under MS-PL.
@@ -75,6 +75,6 @@
 
 ## Release identity prerequisites
 
-- **Apple:** an Apple Developer Program team, a `Developer ID Application` certificate, and either App Store Connect API credentials (`APPLE_API_ISSUER`, `APPLE_API_KEY`, and the private key supplied at `APPLE_API_KEY_PATH`) or Apple ID notarization credentials. CI must import the certificate securely and provide `APPLE_SIGNING_IDENTITY`; no certificate or private key belongs in git. Follow [Tauri's macOS signing and notarization guide](https://v2.tauri.app/distribute/sign/macos/).
+- **Apple:** GitHub Actions stores `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_PRIVATE_KEY_B64` as encrypted repository secrets. The workflow imports the Developer ID certificate into an ephemeral runner keychain for signing and runs ASC with Keychain bypass for notarization. No certificate, private key, or password belongs in git. The current Developer ID Application certificate expires **February 1, 2027** and must be rotated before that date. Follow [Tauri's macOS signing guide](https://v2.tauri.app/distribute/sign/macos/) and [ASC notarization documentation](https://github.com/rudrankriyam/App-Store-Connect-CLI/blob/main/docs/notarization.md).
 - **Windows:** choose a single provider before changing the workflow. Tauri supports a certificate in the Windows certificate store, a custom signing command, Azure Key Vault, and Azure Artifact Signing. The account/profile identifiers may be configuration, but every private key, password, client secret, or signing token belongs in protected CI secrets. Follow [Tauri's Windows signing guide](https://v2.tauri.app/distribute/sign/windows/).
 - **Updater:** generate the long-lived Tauri updater key only after both platform signatures are operational. Store `TAURI_SIGNING_PRIVATE_KEY` and its password as protected secrets, commit only the public key, and retain an offline recovery copy; losing the private key prevents publishing trusted updates to existing installations. Follow the [official updater signing requirements](https://v2.tauri.app/plugin/updater/); update signatures cannot be disabled.

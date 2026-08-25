@@ -83,7 +83,7 @@ The codec, editing work, and optional local icon adapter are complete. The built
 - The opt-in external v279/v317/v325/v326 fixture suite proves that a no-edit save reproduces the exact encrypted source bytes and preserves the exact backup bytes.
 - Golden fixtures for supported historical formats, beginning with 1.4.4 and 1.4.5.
 - The manual preview pipeline now gates on tests, formatting, linting, and matching SemVer manifests; builds universal macOS DMG/app plus Windows MSI/NSIS artifacts; uses a macOS ad-hoc signature; validates all four bundle types; and attaches deterministic SHA-256 checksums, compatibility, and recovery documents to a draft prerelease.
-- Apple Developer ID signing/notarization and Windows code signing follow after preview testing.
+- Apple Developer ID signing and notarization are automated for release builds; Windows code signing remains a release-hardening milestone.
 - Manual and opt-in GitHub Release discovery is implemented; signed download/install remains gated on a protected updater key and platform signing identities.
 - The keyboard-accessibility foundation now includes skip navigation, one-tab-stop item grids with arrow-key movement, semantic tabs/radios/comboboxes, live status announcements, reduced-motion support, a verified 1280×720 layout, and a packaged macOS Accessibility API audit. Manual VoiceOver speech-output and Windows NVDA passes remain before release.
 - Signed update manifest, crash-safe diagnostics, localization, native screen-reader validation, and stable 1.0.

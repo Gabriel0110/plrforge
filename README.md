@@ -86,7 +86,7 @@ Default player folders:
 - **macOS:** `~/Library/Application Support/Terraria/Players`
 - **Windows:** `%USERPROFILE%\Documents\My Games\Terraria\Players`
 
-Preview builds are not yet Apple-notarized or Windows code-signed. Review the release notes and checksum manifest before installing a preview.
+Official macOS release artifacts are Developer ID signed, Apple-notarized, and stapled for Gatekeeper verification. Windows installers are not yet code-signed and will show an unidentified-publisher warning. Review the release notes and checksum manifest before installing a preview.
 
 ## Local Terraria data
 

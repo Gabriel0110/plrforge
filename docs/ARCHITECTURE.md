@@ -36,7 +36,7 @@ Backups live in a sibling `.plrforge-backups` directory. The native layer filter
 
 Release discovery is notification-only. Builds default to the official `Gabriel0110/plrforge` update feed, while a validated `PLRFORGE_GITHUB_REPOSITORY` compile-time value can override it for forks and CI. Official CI sources that override from GitHub's own `${{ github.repository }}` context. The native command calls GitHub's public releases endpoint over TLS, ignores drafts and non-SemVer tags, and compares the newest public version—including explicitly labeled prereleases—with the installed version. Release URLs can only target the configured repository, and opening arbitrary URLs is rejected. Automatic launch checks are an opt-in local browser preference.
 
-The Tauri updater plugin is not enabled yet. Its installer flow requires a long-lived public/private updater key pair and signed update artifacts, in addition to platform code signing. Until those release identities are established, opening the human-readable GitHub Release is safer than implementing an unsigned or home-grown installer.
+The Tauri updater plugin is not enabled yet. Its installer flow requires a long-lived public/private updater key pair and signed update artifacts on every supported platform. macOS releases now use Developer ID signing and Apple notarization, but Windows signing is still pending, so opening the human-readable GitHub Release remains safer than implementing a partially signed or home-grown installer.
 
 ## Item data
 
