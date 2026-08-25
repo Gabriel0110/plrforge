@@ -105,6 +105,9 @@ jobs:
           retryAttempts: 2
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
+      - name: Validate macOS preview signature and architectures
+        if: runner.os == 'macOS'
+        run: node script/macos-artifact.mjs src-tauri/target/universal-apple-darwin/release/bundle/macos/PlrForge.app --mode preview --expect-arch arm64,x86_64
 
   finalize:
     name: Verify release assets

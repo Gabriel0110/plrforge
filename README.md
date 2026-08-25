@@ -161,6 +161,7 @@ PLRFORGE_FIXTURE=/absolute/path/to/disposable.plr \
 
 ## Project documentation
 
+- [Accessibility](docs/ACCESSIBILITY.md) — keyboard behavior, native semantic verification, and screen-reader release checks
 - [Architecture](docs/ARCHITECTURE.md) — application boundaries, codecs, save transactions, local asset handling, and testing strategy
 - [Compatibility](docs/COMPATIBILITY.md) — supported player-file versions and fail-closed behavior
 - [Recovery](docs/RECOVERY.md) — in-app and manual character restoration

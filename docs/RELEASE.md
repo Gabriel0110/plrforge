@@ -23,6 +23,7 @@
 - Verify backup listing, Reveal, unsaved-change lockout, restore confirmation, restored-file reload, and the new pre-restore safety copy.
 - Verify manual release checking, opt-in launch checking, no-release/error states, and that release links cannot leave the configured GitHub repository.
 - Verify 1280×720, 1440×900, and Windows high-DPI layouts.
+- Complete the platform screen-reader checklist in `docs/ACCESSIBILITY.md` against a disposable player copy.
 
 ## macOS
 
@@ -30,6 +31,8 @@
 - For unsigned previews, keep Tauri's ad-hoc `signingIdentity: "-"`; confirm macOS still requires explicit user approval in Privacy & Security.
 - Configure Developer ID Application signing.
 - Notarize and staple the `.app`/`.dmg`.
+- Validate preview bundles with `node script/macos-artifact.mjs <PlrForge.app> --mode preview --expect-arch arm64,x86_64`.
+- Validate stable bundles with `node script/macos-artifact.mjs <PlrForge.app> --mode distribution --expect-arch arm64,x86_64 --dmg <PlrForge.dmg>`; this rejects ad-hoc signatures and requires Gatekeeper acceptance plus stapled notarization tickets.
 - Test first launch, file picker permissions, backup access, and Steam Cloud warning.
 - Test Steam and nonstandard game-asset paths on both a clean and populated icon cache.
 
@@ -69,3 +72,9 @@
 - Enable updater artifacts and the official Tauri updater plugin only after macOS notarization and Windows signing work in CI.
 - Publish and verify `latest.json`, platform artifacts, and `.sig` files from a private test release before enabling installation for users.
 - Never replace Tauri signature verification with a custom download/install path.
+
+## Release identity prerequisites
+
+- **Apple:** an Apple Developer Program team, a `Developer ID Application` certificate, and either App Store Connect API credentials (`APPLE_API_ISSUER`, `APPLE_API_KEY`, and the private key supplied at `APPLE_API_KEY_PATH`) or Apple ID notarization credentials. CI must import the certificate securely and provide `APPLE_SIGNING_IDENTITY`; no certificate or private key belongs in git. Follow [Tauri's macOS signing and notarization guide](https://v2.tauri.app/distribute/sign/macos/).
+- **Windows:** choose a single provider before changing the workflow. Tauri supports a certificate in the Windows certificate store, a custom signing command, Azure Key Vault, and Azure Artifact Signing. The account/profile identifiers may be configuration, but every private key, password, client secret, or signing token belongs in protected CI secrets. Follow [Tauri's Windows signing guide](https://v2.tauri.app/distribute/sign/windows/).
+- **Updater:** generate the long-lived Tauri updater key only after both platform signatures are operational. Store `TAURI_SIGNING_PRIVATE_KEY` and its password as protected secrets, commit only the public key, and retain an offline recovery copy; losing the private key prevents publishing trusted updates to existing installations. Follow the [official updater signing requirements](https://v2.tauri.app/plugin/updater/); update signatures cannot be disabled.

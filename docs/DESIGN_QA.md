@@ -59,6 +59,11 @@ Both images were inspected at original resolution with `view_image` after the in
 - Verified Magic Lantern (3043) in search, regular and animated inventory items, item inspector art, active buff cards, and Journey research rows in the native WebView.
 - Detected the Fallen Star's eight-frame source sheet during visual QA, traced the exact animation table and `ItemID.Sets.IsFood` membership from the installed v325 assembly, implemented first-frame normalization, rebuilt, and confirmed the corrected single-frame icon.
 - Kept the live `NewBruv.plr` read-only throughout native asset QA; Save remained disabled.
+- Inspected the packaged v0.1.1 app through the macOS Accessibility API with the verified v326 `Test` character and made no player-file edits.
+- Confirmed native names and roles for the player picker, editor rail, update/save controls, item inspector, stack controls, modifier picker, favorite switch, and all inventory groups.
+- Confirmed Hotbar Right Arrow moved native focus from slot 1 to slot 2 without changing selection, and the focused Copper Pickaxe exposed its complete local Terraria tooltip text.
+- Confirmed sidebar Down Arrow activated Item Catalog, and catalog Down Arrow moved the selected radio category from All items to Weapons & tools while updating the result count from 6,170 to 695.
+- Confirmed item search exposed an expanded native combo box and named results list for `wood`.
 
 ## Remaining deviations
 

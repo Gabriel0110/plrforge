@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
+import { parseArchitectures, parseSigningDetails } from "./macos-artifact.mjs";
 import { generateChecksums, verifyVersions } from "./release.mjs";
 
 async function versionFixture(versions) {
@@ -63,5 +64,27 @@ test("generateChecksums validates bundle types and ignores metadata", async () =
   await assert.rejects(
     generateChecksums(root, [".exe"]),
     /missing the required \.exe bundle/,
+  );
+});
+
+test("macOS artifact parsers distinguish preview and Developer ID signatures", () => {
+  assert.deepEqual(parseArchitectures("x86_64 arm64\n"), ["arm64", "x86_64"]);
+  assert.deepEqual(
+    parseSigningDetails("CodeDirectory flags=0x10002(adhoc,runtime)\nSignature=adhoc\nTeamIdentifier=not set"),
+    {
+      adHoc: true,
+      hardenedRuntime: true,
+      authorities: [],
+      teamIdentifier: "not set",
+    },
+  );
+  assert.deepEqual(
+    parseSigningDetails("CodeDirectory flags=0x10000(runtime)\nAuthority=Developer ID Application: Example (TEAMID)\nAuthority=Developer ID Certification Authority\nTeamIdentifier=TEAMID"),
+    {
+      adHoc: false,
+      hardenedRuntime: true,
+      authorities: ["Developer ID Application: Example (TEAMID)", "Developer ID Certification Authority"],
+      teamIdentifier: "TEAMID",
+    },
   );
 });
