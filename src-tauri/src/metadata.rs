@@ -11,7 +11,7 @@ use tauri::{AppHandle, Manager};
 use thiserror::Error;
 
 const SCHEMA_VERSION: u32 = 1;
-const CACHE_VERSION: &str = "terraria-item-metadata-v2";
+const CACHE_VERSION: &str = "terraria-item-metadata-v3";
 const METADATA_FILE: &str = "item-metadata.json";
 const METADATA_MARKER: &str = ".item-metadata-source";
 const HELPER_BYTES: &[u8] = include_bytes!("../resources/PlrForge.Metadata.exe");
@@ -76,6 +76,21 @@ pub struct GameItemMetadata {
     pub rare: Option<i32>,
     pub max_stack: Option<i32>,
     pub prefix: Option<i32>,
+    pub scale: Option<f32>,
+    pub shoot_speed: Option<f32>,
+    pub requested_prefix: Option<i32>,
+    pub can_roll_prefix: Option<bool>,
+    pub has_prefix_stats: Option<bool>,
+    pub prefix_damage_multiplier: Option<f32>,
+    pub prefix_knockback_multiplier: Option<f32>,
+    pub prefix_speed_multiplier: Option<f32>,
+    pub prefix_scale_multiplier: Option<f32>,
+    pub prefix_velocity_multiplier: Option<f32>,
+    pub prefix_mana_multiplier: Option<f32>,
+    pub prefix_crit_bonus: Option<i32>,
+    pub prefix_tag_damage_bonus: Option<i32>,
+    pub prefix_armor_penetration_bonus: Option<i32>,
+    pub prefix_value_multiplier: Option<f32>,
     pub melee: Option<bool>,
     pub ranged: Option<bool>,
     pub magic: Option<bool>,
@@ -382,13 +397,36 @@ mod tests {
             directory.path(),
             &terraria,
             &variants_path,
-            Some("2888:51"),
+            Some("2888:51,3507:65,1157:85"),
         )
         .unwrap();
-        let variant = read_catalog(&variants_path).unwrap().items.remove(0);
+        let variants = read_catalog(&variants_path).unwrap().items;
+        let variant = variants
+            .iter()
+            .find(|item| item.requested_prefix == Some(51))
+            .unwrap();
         assert_eq!(variant.prefix, Some(51));
+        assert_eq!(variant.requested_prefix, Some(51));
+        assert_eq!(variant.can_roll_prefix, Some(true));
+        assert!(variant.prefix_damage_multiplier.unwrap() > 1.0);
         assert_eq!(variant.damage, Some(24));
         assert_eq!(variant.crit, Some(2));
         assert_eq!(variant.use_animation, Some(21));
+
+        let incompatible = variants
+            .iter()
+            .find(|item| item.requested_prefix == Some(65))
+            .unwrap();
+        assert_eq!(incompatible.can_roll_prefix, Some(false));
+        assert_eq!(incompatible.prefix, None);
+
+        let fabled = variants
+            .iter()
+            .find(|item| item.requested_prefix == Some(85))
+            .unwrap();
+        assert_eq!(fabled.can_roll_prefix, Some(true));
+        assert_eq!(fabled.prefix, Some(85));
+        assert_eq!(fabled.prefix_tag_damage_bonus, Some(3));
+        assert_eq!(fabled.prefix_armor_penetration_bonus, Some(10));
     }
 }

@@ -27,7 +27,7 @@ PlrForge is an independent community project and is not affiliated with or endor
 | Area | What you can edit |
 | --- | --- |
 | **Character** | Name, difficulty, appearance, health, mana, play time, permanent upgrades, tax savings, death counters, team, and voice where supported by the file format |
-| **Inventory** | All 58 carried slots, stack counts, favorite state, and exact numeric prefixes |
+| **Inventory** | All 58 carried slots, stack counts, favorite state, and a compatibility-aware modifier browser with live stat previews |
 | **Equipment** | Three loadouts, armor, accessories, vanity slots, dyes, pets, light pets, minecarts, mounts, and hooks |
 | **Storage** | Piggy Bank, Safe, Defender's Forge, and Void Vault |
 | **Item Catalog** | Browse 6,170 items by category and rarity; search by name or numeric ID; sort and insert directly into a compatible slot |
@@ -39,6 +39,7 @@ Additional quality-of-life features include:
 
 - Native Terraria item and buff icons extracted from the user's own installation
 - Detailed, prefix-aware item tooltips generated from the installed game
+- Searchable modifier selection with item-type, quality, and stat-effect filters—including Terraria 1.4.5 summon modifiers
 - Shared undo and redo history across the editor
 - Automatic timestamped backups before every successful save
 - Backup browsing and guarded restore inside the app
@@ -93,6 +94,7 @@ PlrForge does not bundle, download, or hotlink Terraria artwork or extracted gam
 
 - `Item_*.xnb` and `Buff_*.xnb` textures are decoded into local PNG files without resampling, recoloring, or changing Terraria's transparent sprite canvas.
 - A small open-source metadata helper reads the installed game's item defaults and English localization to provide damage, speed, knockback, tool power, healing, value, descriptive text, and exact prefix-adjusted values.
+- Modifier compatibility and previews come from Terraria's own `CanRollPrefix` and prefix-stat calculations, so PlrForge filters for the selected item instead of guessing from a fixed list.
 - Terraria is never launched or modified, and no game data is sent over the network.
 - If extraction is unavailable or a game update changes the assembly layout, editing continues with the bundled searchable catalog and text fallbacks.
 

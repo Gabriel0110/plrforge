@@ -112,14 +112,15 @@ export function ItemTooltip({ itemId, stack, prefix = 0, favorited = false, cont
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [position, setPosition] = useState<Position | null>(null);
   const item = findItem(itemId);
-  const { itemMetadata, metadataVersion, prefetchItemMetadata } = useGameAssets();
+  const { itemMetadata, itemVariant, metadataVersion, prefetchItemMetadata } = useGameAssets();
   const metadata = itemMetadata(itemId, prefix);
+  const variant = prefix > 0 ? itemVariant(itemId, prefix) : null;
 
   useEffect(() => {
-    if (anchor && prefix > 0 && metadata?.prefix !== prefix) {
+    if (anchor && prefix > 0 && variant?.state === "unresolved") {
       void prefetchItemMetadata([{ id: itemId, prefix }]);
     }
-  }, [anchor, itemId, metadata?.prefix, prefetchItemMetadata, prefix]);
+  }, [anchor, itemId, prefetchItemMetadata, prefix, variant?.state]);
 
   useLayoutEffect(() => {
     if (!anchor) {
@@ -173,7 +174,8 @@ export function ItemTooltip({ itemId, stack, prefix = 0, favorited = false, cont
           </div>
           {stats.length > 0 && <div className="mt-3 space-y-1 text-[11px] leading-4 text-white/72">{stats.map((line, index) => <p key={`${index}-${line}`}>{line}</p>)}</div>}
           {metadata?.tooltip && <div className="mt-3 border-t border-white/[0.07] pt-2.5 text-[11px] leading-[1.45] text-sky-100/66">{metadata.tooltip.split("\n").map((line, index) => <p key={`${index}-${line}`}>{line}</p>)}</div>}
-          {prefix > 0 && metadata && metadata.prefix !== prefix && <p className="mt-2 text-[9px] leading-4 text-amber-200/45">Loading Terraria's exact {modifier} modifier values…</p>}
+          {prefix > 0 && variant && (variant.state === "loading" || variant.state === "unresolved") && <p className="mt-2 text-[9px] leading-4 text-amber-200/45">Loading Terraria's exact {modifier} modifier values…</p>}
+          {prefix > 0 && variant?.state === "incompatible" && <p className="mt-2 text-[9px] leading-4 text-amber-200/45">{modifier} is stored on this item, but Terraria does not normally allow it to roll here. Base stats are shown.</p>}
           {context && <p className="mt-3 border-t border-white/[0.07] pt-2 text-[9px] uppercase tracking-[0.1em] text-emerald-200/44">{context}</p>}
           <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[9px] text-white/30">
             <span>Item ID</span><span className="text-right text-white/58">{item.id}</span>

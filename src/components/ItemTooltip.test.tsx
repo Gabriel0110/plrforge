@@ -13,9 +13,15 @@ vi.mock("../lib/assets", () => ({
       knockBack: prefix === 51 ? 2.7 : 3,
       useAnimation: prefix === 51 ? 21 : 23,
       value: prefix === 51 ? 116873 : 100000,
-      prefix: prefix || undefined,
+      prefix: prefix === 51 ? prefix : undefined,
       ranged: true,
     } : null,
+    itemVariant: (id: number, prefix: number) => id === 2888 && prefix === 51
+      ? { state: "ready", metadata: { id, prefix } }
+      : id === 2888 && prefix === 65
+        ? { state: "incompatible", metadata: null }
+        : { state: "unavailable", metadata: null },
+    prefetchItemMetadata: vi.fn().mockResolvedValue(undefined),
     metadataVersion: "1.4.5.7",
   }),
 }));
@@ -63,6 +69,19 @@ describe("ItemTooltip", () => {
     expect(tooltip.textContent).toContain("Nasty The Bee's Knees");
     expect(tooltip.textContent).toContain("24 ranged damage");
     expect(tooltip.textContent).toContain("6% critical strike chance");
+    expect(tooltip.textContent).not.toContain("Loading Terraria's exact");
+  });
+
+  it("explains a stored modifier that Terraria does not normally allow", () => {
+    render(
+      <ItemTooltip itemId={2888} stack={1} prefix={65} context="Hotbar 2">
+        {(props) => <button {...props}>Invalid Warding bow slot</button>}
+      </ItemTooltip>,
+    );
+    fireEvent.focus(screen.getByRole("button", { name: "Invalid Warding bow slot" }));
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip.textContent).toContain("Warding is stored on this item");
+    expect(tooltip.textContent).toContain("Base stats are shown");
     expect(tooltip.textContent).not.toContain("Loading Terraria's exact");
   });
 });

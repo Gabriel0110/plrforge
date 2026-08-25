@@ -14,7 +14,7 @@ The application optimizes for three jobs:
 
 - **Character:** identity, difficulty, health, mana, appearance, permanent upgrades, death counts, and play time.
 - **Loadouts:** armor, accessories, vanity, dyes, pets, light pets, hooks, mounts, and minecarts across all three loadouts.
-- **Inventory:** 50 main slots, coins, ammo, item ID, stack, prefix, favorite, move, replace, and clear.
+- **Inventory:** 50 main slots, coins, ammo, item ID, stack, favorite, move, replace, clear, and a searchable modifier browser with compatibility, item-family, quality, and stat-effect filters.
 - **Item Catalog:** browse every known item by category and rarity, search by name/key/ID, sort, restrict to the active destination's compatible items, and insert without leaving the browsing workflow.
 - **Storage:** Piggy Bank, Safe, Defender's Forge, and Void Vault.
 - **Effects:** saved buffs and durations.
@@ -62,6 +62,7 @@ The quick search beside every item surface supports direct name/ID entry or hand
 - Automatic Steam/GOG discovery and locally extracted, user-owned item and buff icons with a no-assets fallback.
 - Strict XNB/LZX decoding, fingerprinted OS cache, exact v325 animation-frame normalization, and a manual folder picker.
 - Transparent-edge normalization, bounded pixel-art viewports, a compact inventory layout with a distinct hotbar, and a reusable full Item Catalog with category/rarity/sort/compatibility controls.
+- Prefix selection now queries the installed Terraria build for every candidate's roll compatibility and exact stat multipliers, then exposes positive, tradeoff, negative, item-family, and effect filters with resulting-stat previews.
 
 The codec, editing work, and optional local icon adapter are complete. The built-in no-assets glyph fallback remains production-safe.
 

@@ -1,7 +1,9 @@
-import { ArrowSquareOut, Copy, ClipboardText, Star, Trash } from "@phosphor-icons/react";
+import { ArrowSquareOut, CaretRight, Copy, ClipboardText, SlidersHorizontal, Star, Trash } from "@phosphor-icons/react";
+import { useState } from "react";
 import { findItem, itemName, prefixes } from "../data/catalog";
 import type { InventoryItem } from "../types";
 import { ItemGlyph } from "./ItemGlyph";
+import { ModifierBrowser } from "./ModifierBrowser";
 
 type Props = {
   item: InventoryItem | null;
@@ -28,6 +30,8 @@ export function ItemInspector({
   onPaste,
   pasteLabel,
 }: Props) {
+  const [modifierBrowserOpen, setModifierBrowserOpen] = useState(false);
+
   if (!item) {
     return (
       <aside className="flex min-h-0 flex-col border-l border-white/[0.08] bg-[#111513]/65 p-6">
@@ -84,21 +88,27 @@ export function ItemInspector({
             <span className="mt-1.5 block font-mono text-[10px] text-white/28">Valid range 1–{maximum}</span>
           </div>}
 
-          <label className="block">
+          <div>
             <span className="mb-2 block text-xs font-medium text-white/62">Modifier</span>
-            <select
-              value={item.prefix}
-              onChange={(event) => {
-                const prefix = Number(event.target.value);
+            <button type="button" onClick={() => setModifierBrowserOpen(true)} aria-haspopup="dialog" className="group flex w-full items-center gap-3 rounded-lg border border-white/12 bg-white/[0.022] px-3 py-2.5 text-left transition hover:border-emerald-300/24 hover:bg-emerald-300/[0.035] active:scale-[0.99]">
+              <span className="grid size-7 shrink-0 place-items-center rounded-md border border-white/[0.08] bg-white/[0.025] text-emerald-200/58"><SlidersHorizontal className="size-3.5" /></span>
+              <span className="min-w-0 flex-1"><span className="block truncate text-[12px] font-medium text-white/78">{prefixes.find((entry) => entry.id === item.prefix)?.name ?? `Prefix ${item.prefix}`}</span><span className="mt-0.5 block text-[9px] text-white/28">Browse compatible modifiers and preview stats</span></span>
+              <CaretRight className="size-3.5 text-white/24 transition group-hover:translate-x-0.5 group-hover:text-white/52" />
+            </button>
+            <span className="mt-1.5 block text-[10px] text-white/28">Compatibility and effects come from your installed Terraria version.</span>
+            <ModifierBrowser
+              open={modifierBrowserOpen}
+              itemId={item.itemId}
+              itemName={name}
+              currentPrefix={item.prefix}
+              onClose={() => setModifierBrowserOpen(false)}
+              onApply={(prefix) => {
                 const prefixName = prefixes.find((entry) => entry.id === prefix)?.name ?? `Prefix ${prefix}`;
                 onPatch({ prefix }, `Modifier changed to ${prefixName}`);
+                setModifierBrowserOpen(false);
               }}
-              className="h-10 w-full rounded-lg border border-white/12 bg-[#151a18] px-3 text-sm text-white/82 outline-none focus:border-emerald-400/60"
-            >
-              {prefixes.map((prefix) => <option key={prefix.id} value={prefix.id}>{prefix.name}</option>)}
-            </select>
-            <span className="mt-1.5 block text-[10px] text-white/28">PlrForge preserves the exact numeric prefix.</span>
-          </label>
+            />
+          </div>
 
           {canFavorite && <div>
             <span className="mb-2 block text-xs font-medium text-white/62">Favorite</span>

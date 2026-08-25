@@ -60,6 +60,8 @@ namespace PlrForge.Metadata
                 throw new MissingMethodException("Terraria.Item.SetDefaults was not found.");
             var applyPrefix = itemType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                 .FirstOrDefault(method => method.Name == "Prefix" && method.GetParameters().Length == 1);
+            var canRollPrefix = itemType.GetMethod("CanRollPrefix", BindingFlags.Public | BindingFlags.Instance);
+            var prefixMultipliers = itemType.GetMethod("TryGetPrefixStatMultipliersForItem", BindingFlags.Public | BindingFlags.Instance);
 
             var temporary = outputPath + ".tmp";
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
@@ -82,11 +84,15 @@ namespace PlrForge.Metadata
                     if (id <= 0 || id >= itemCount)
                         continue;
                     object item;
+                    PrefixDetails prefixDetails;
                     try
                     {
                         item = Activator.CreateInstance(itemType);
                         setDefaults.Invoke(item, new object[] { id, null });
-                        if (request.Prefix > 0 && applyPrefix != null)
+                        prefixDetails = request.Prefix > 0
+                            ? ReadPrefixDetails(itemType, item, request.Prefix, canRollPrefix, prefixMultipliers)
+                            : null;
+                        if (request.Prefix > 0 && applyPrefix != null && (prefixDetails == null || prefixDetails.CanRollPrefix))
                             applyPrefix.Invoke(item, new object[] { request.Prefix });
                     }
                     catch
@@ -101,7 +107,7 @@ namespace PlrForge.Metadata
                     if (wroteItem)
                         writer.Write(',');
                     wroteItem = true;
-                    WriteItem(writer, itemType, item, id, SelectKey(keysById, localization, id), localization);
+                    WriteItem(writer, itemType, item, id, SelectKey(keysById, localization, id), localization, prefixDetails);
                 }
 
                 writer.Write("]}");
@@ -371,7 +377,8 @@ namespace PlrForge.Metadata
             object item,
             int id,
             string key,
-            Dictionary<string, Dictionary<string, string>> localization)
+            Dictionary<string, Dictionary<string, string>> localization,
+            PrefixDetails prefixDetails)
         {
             writer.Write("{\"id\":");
             writer.Write(id);
@@ -404,6 +411,8 @@ namespace PlrForge.Metadata
             WriteNumber(writer, "rare", ReadInt(itemType, item, "rare"));
             WriteNumber(writer, "maxStack", ReadInt(itemType, item, "maxStack"));
             WriteNumber(writer, "prefix", ReadInt(itemType, item, "prefix"));
+            WriteFloat(writer, "scale", ReadFloat(itemType, item, "scale"));
+            WriteFloat(writer, "shootSpeed", ReadFloat(itemType, item, "shootSpeed"));
             WriteBoolean(writer, "melee", ReadBool(itemType, item, "melee"));
             WriteBoolean(writer, "ranged", ReadBool(itemType, item, "ranged"));
             WriteBoolean(writer, "magic", ReadBool(itemType, item, "magic"));
@@ -413,7 +422,61 @@ namespace PlrForge.Metadata
             WriteBoolean(writer, "material", ReadBool(itemType, item, "material"));
             WriteBoolean(writer, "autoReuse", ReadBool(itemType, item, "autoReuse"));
             WriteBoolean(writer, "channel", ReadBool(itemType, item, "channel"));
+            if (prefixDetails != null)
+            {
+                WriteNumber(writer, "requestedPrefix", prefixDetails.RequestedPrefix);
+                WriteRequiredBoolean(writer, "canRollPrefix", prefixDetails.CanRollPrefix);
+                WriteRequiredBoolean(writer, "hasPrefixStats", prefixDetails.HasStats);
+                WriteFloat(writer, "prefixDamageMultiplier", prefixDetails.Damage);
+                WriteFloat(writer, "prefixKnockbackMultiplier", prefixDetails.Knockback);
+                WriteFloat(writer, "prefixSpeedMultiplier", prefixDetails.Speed);
+                WriteFloat(writer, "prefixScaleMultiplier", prefixDetails.Scale);
+                WriteFloat(writer, "prefixVelocityMultiplier", prefixDetails.Velocity);
+                WriteFloat(writer, "prefixManaMultiplier", prefixDetails.Mana);
+                WriteNumber(writer, "prefixCritBonus", prefixDetails.Crit);
+                WriteNumber(writer, "prefixTagDamageBonus", prefixDetails.TagDamage);
+                WriteNumber(writer, "prefixArmorPenetrationBonus", prefixDetails.ArmorPenetration);
+                WriteFloat(writer, "prefixValueMultiplier", prefixDetails.Value);
+            }
             writer.Write('}');
+        }
+
+        private static PrefixDetails ReadPrefixDetails(
+            Type itemType,
+            object item,
+            int requestedPrefix,
+            MethodInfo canRollPrefix,
+            MethodInfo prefixMultipliers)
+        {
+            var details = new PrefixDetails { RequestedPrefix = requestedPrefix };
+            if (canRollPrefix != null)
+            {
+                try { details.CanRollPrefix = Convert.ToBoolean(canRollPrefix.Invoke(item, new object[] { requestedPrefix })); }
+                catch { details.CanRollPrefix = false; }
+            }
+            if (prefixMultipliers == null)
+                return details;
+
+            var values = new object[] { requestedPrefix, 1f, 1f, 1f, 1f, 1f, 1f, 0, 0, 0, 1f };
+            try
+            {
+                details.HasStats = Convert.ToBoolean(prefixMultipliers.Invoke(item, values));
+                details.Damage = Convert.ToSingle(values[1], CultureInfo.InvariantCulture);
+                details.Knockback = Convert.ToSingle(values[2], CultureInfo.InvariantCulture);
+                details.Speed = Convert.ToSingle(values[3], CultureInfo.InvariantCulture);
+                details.Scale = Convert.ToSingle(values[4], CultureInfo.InvariantCulture);
+                details.Velocity = Convert.ToSingle(values[5], CultureInfo.InvariantCulture);
+                details.Mana = Convert.ToSingle(values[6], CultureInfo.InvariantCulture);
+                details.Crit = Convert.ToInt32(values[7], CultureInfo.InvariantCulture);
+                details.TagDamage = Convert.ToInt32(values[8], CultureInfo.InvariantCulture);
+                details.ArmorPenetration = Convert.ToInt32(values[9], CultureInfo.InvariantCulture);
+                details.Value = Convert.ToSingle(values[10], CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                details.HasStats = false;
+            }
+            return details;
         }
 
         private const BindingFlags AllStatic = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
@@ -523,6 +586,14 @@ namespace PlrForge.Metadata
             writer.Write("\":true");
         }
 
+        private static void WriteRequiredBoolean(TextWriter writer, string name, bool value)
+        {
+            writer.Write(",\"");
+            writer.Write(name);
+            writer.Write("\":");
+            writer.Write(value ? "true" : "false");
+        }
+
         private static void WriteString(TextWriter writer, string value)
         {
             writer.Write('"');
@@ -558,6 +629,23 @@ namespace PlrForge.Metadata
 
             public int Id { get; private set; }
             public int Prefix { get; private set; }
+        }
+
+        private sealed class PrefixDetails
+        {
+            public int RequestedPrefix { get; set; }
+            public bool CanRollPrefix { get; set; }
+            public bool HasStats { get; set; }
+            public float Damage { get; set; } = 1f;
+            public float Knockback { get; set; } = 1f;
+            public float Speed { get; set; } = 1f;
+            public float Scale { get; set; } = 1f;
+            public float Velocity { get; set; } = 1f;
+            public float Mana { get; set; } = 1f;
+            public int Crit { get; set; }
+            public int TagDamage { get; set; }
+            public int ArmorPenetration { get; set; }
+            public float Value { get; set; } = 1f;
         }
     }
 }
