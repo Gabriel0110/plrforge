@@ -1,6 +1,6 @@
 [package]
 name = "plrforge"
-version = "0.1.1"
+version = "0.2.0"
 description = "A local-first Terraria character save editor"
 authors = ["PlrForge contributors"]
 edition = "2021"
