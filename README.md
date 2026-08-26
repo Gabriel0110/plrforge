@@ -15,6 +15,12 @@ Edit Terraria player files with fast item search, a complete item catalog, nativ
 
 </div>
 
+<p align="center">
+  <img src="docs/screenshots/inventory.png" alt="PlrForge inventory editor showing a Terraria character's hotbar, backpack, coins, ammo, and selected item controls" width="1200">
+</p>
+
+<p align="center"><sub>Native Terraria artwork and item data are read from the user's own local game installation.</sub></p>
+
 > [!IMPORTANT]
 > Close Terraria before opening or saving a character. Steam Cloud or the running game can overwrite local changes.
 
@@ -47,6 +53,23 @@ Additional quality-of-life features include:
 - Keyboard-efficient slot grids, semantic controls, visible focus, reduced-motion support, and skip navigation
 - Graceful text fallbacks when Terraria assets are unavailable
 
+## A closer look
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/screenshots/item-catalog.png" alt="PlrForge item catalog filtered to weapons and tools, with local Terraria icons and a detailed item tooltip">
+      <br>
+      <sub><strong>Browse instead of guessing.</strong> Explore the full catalog by category, rarity, name, ID, stack limit, or slot compatibility.</sub>
+    </td>
+    <td width="50%">
+      <img src="docs/screenshots/modifier-browser.png" alt="PlrForge modifier browser showing compatible Terraria prefixes, quality filters, stat effects, and a live item preview">
+      <br>
+      <sub><strong>Choose modifiers with context.</strong> Filter compatible prefixes and preview their exact effects before applying one.</sub>
+    </td>
+  </tr>
+</table>
+
 ## Save safety
 
 Every save passes through the native Rust layer and follows the same guarded transaction:
@@ -75,9 +98,13 @@ See the [full compatibility matrix](docs/COMPATIBILITY.md) for format-specific d
 
 ## Getting started
 
+<p align="center">
+  <img src="docs/screenshots/player-picker.png" alt="PlrForge player picker showing automatically detected and compatibility-verified Terraria characters" width="1000">
+</p>
+
 1. Visit [GitHub Releases](https://github.com/Gabriel0110/plrforge/releases) and download the build for your platform. If no packaged build is available for the current revision, use the [development instructions](#development).
 2. Fully close Terraria.
-3. Start PlrForge and choose **Open Player**.
+3. Start PlrForge and select a detected character, or choose **Choose .plr file** to browse manually.
 4. Select a `.plr` file, make your changes, and choose **Save changes**.
 5. Reopen the character in PlrForge, then verify it in Terraria before removing any recovery copies.
 
