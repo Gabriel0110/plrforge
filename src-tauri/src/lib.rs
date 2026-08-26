@@ -16,6 +16,11 @@ fn discover_players() -> Result<Vec<DiscoveredPlayer>, String> {
 }
 
 #[tauri::command]
+fn default_player_directory() -> Option<String> {
+    save::default_player_directory()
+}
+
+#[tauri::command]
 fn load_player(path: String) -> Result<PlayerDocument, String> {
     save::load_player(&path).map_err(|error| error.to_string())
 }
@@ -125,6 +130,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             discover_players,
+            default_player_directory,
             inspect_player,
             load_player,
             save_player,

@@ -115,9 +115,11 @@ export type UpdateStatus = {
 
 export async function choosePlayerFile(): Promise<string | null> {
   if (!isDesktop()) return null;
+  const defaultPath = await invoke<string | null>("default_player_directory").catch(() => null);
   return open({
     multiple: false,
     directory: false,
+    defaultPath: defaultPath ?? undefined,
     filters: [{ name: "Terraria player", extensions: ["plr"] }],
   });
 }

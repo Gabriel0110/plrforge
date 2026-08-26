@@ -90,7 +90,7 @@ pub struct RestoreReceipt {
     pub restored_at: String,
 }
 
-pub fn discover_players() -> Result<Vec<DiscoveredPlayer>, SaveError> {
+fn player_directories() -> Vec<PathBuf> {
     let mut roots = Vec::new();
     if cfg!(target_os = "macos") {
         if let Some(home) = dirs::home_dir() {
@@ -103,9 +103,19 @@ pub fn discover_players() -> Result<Vec<DiscoveredPlayer>, SaveError> {
     } else if let Some(data) = dirs::data_local_dir() {
         roots.push(data.join("Terraria/Players"));
     }
+    roots
+}
 
+pub fn default_player_directory() -> Option<String> {
+    player_directories()
+        .into_iter()
+        .find(|path| path.is_dir())
+        .map(|path| path.to_string_lossy().into_owned())
+}
+
+pub fn discover_players() -> Result<Vec<DiscoveredPlayer>, SaveError> {
     let mut players = Vec::new();
-    for root in roots {
+    for root in player_directories() {
         let Ok(entries) = fs::read_dir(root) else {
             continue;
         };
